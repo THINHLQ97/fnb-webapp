@@ -2,6 +2,4 @@ services:
   tensorship-net:
     build: ./admin
     expose:
-      - "3000"
-    labels:
-      - "traefik.http.services.tensorship-net.loadbalancer.server.port=3000"
+      - "3001"

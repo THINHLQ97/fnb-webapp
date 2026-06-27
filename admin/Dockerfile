@@ -32,4 +32,5 @@ RUN mkdir .next && chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 USER nextjs
-CMD ["sh", "-c", "echo \"PORT=$PORT HOSTNAME=$HOSTNAME\" && node server.js"]
+EXPOSE 3000
+CMD ["node", "server.js"]

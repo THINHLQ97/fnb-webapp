@@ -3,12 +3,14 @@ ARG NODE_VERSION=22-slim
 # Stage 1: Install dependencies
 FROM node:${NODE_VERSION} AS dependencies
 WORKDIR /app
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json* ./
 RUN npm ci --ignore-scripts
 
 # Stage 2: Build
 FROM node:${NODE_VERSION} AS builder
 WORKDIR /app
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 RUN mkdir -p public
@@ -20,6 +22,7 @@ RUN npx prisma generate && npm run build
 # Stage 3: Run
 FROM node:${NODE_VERSION} AS runner
 WORKDIR /app
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"

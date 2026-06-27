@@ -1,5 +1,3 @@
 services:
   tensorship-net:
     build: ./admin
-    ports:
-      - "${PORT:-3000}:3000"

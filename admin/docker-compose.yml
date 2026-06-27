@@ -1,0 +1,5 @@
+services:
+  tensorship-net:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"

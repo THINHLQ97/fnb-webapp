@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { label: 'Trang chủ', href: '/' },
   { label: 'Menu', href: '/menu' },
+  { label: 'Blog', href: '/blog' },
   { label: 'Giới thiệu', href: '/about' },
   { label: 'Liên hệ', href: '/contact' },
 ];

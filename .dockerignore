@@ -1,0 +1,11 @@
+**/node_modules/
+**/.next/
+**/.env
+**/.env*.local
+**/.git/
+**/.claude/
+**/.agents/
+**/*.md
+**/coverage/
+web-bitespace-ref/
+ref-shipping/

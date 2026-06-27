@@ -42,9 +42,9 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY --from=builder --chown=node:node /app/public ./public
+RUN mkdir -p public .next && chown -R node:node public .next
 
-RUN mkdir .next && chown node:node .next
+COPY --from=builder --chown=node:node /app/public ./public/
 
 COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static

@@ -2,24 +2,20 @@ ARG NODE_VERSION=22-slim
 
 FROM node:${NODE_VERSION} AS dependencies
 WORKDIR /app
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
-COPY admin/package.json admin/package-lock.json* ./
+COPY web/package.json web/package-lock.json* ./
 RUN npm ci --ignore-scripts
 
 FROM node:${NODE_VERSION} AS builder
 WORKDIR /app
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY --from=dependencies /app/node_modules ./node_modules
-COPY admin/ .
+COPY web/ .
 RUN mkdir -p public
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV BUILD_STANDALONE=true
-RUN npx prisma generate && npm run build
+RUN npx next build
 
 FROM node:${NODE_VERSION} AS runner
 WORKDIR /app
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production
 ENV HOSTNAME="0.0.0.0"
 ENV NEXT_TELEMETRY_DISABLED=1

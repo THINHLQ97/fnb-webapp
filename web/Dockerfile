@@ -1,7 +1,3 @@
-# ============================================
-# Stage 1: Install dependencies
-# ============================================
-
 ARG NODE_VERSION=22-slim
 
 FROM node:${NODE_VERSION} AS dependencies
@@ -12,10 +8,6 @@ COPY package.json package-lock.json* ./
 
 RUN npm ci
 
-# ============================================
-# Stage 2: Build the Next.js application
-# ============================================
-
 FROM node:${NODE_VERSION} AS builder
 
 WORKDIR /app
@@ -25,13 +17,8 @@ COPY . .
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV BUILD_STANDALONE=true
 
-RUN npm run build
-
-# ============================================
-# Stage 3: Production runner
-# ============================================
+RUN npx next build
 
 FROM node:${NODE_VERSION} AS runner
 

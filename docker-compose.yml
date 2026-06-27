@@ -1,3 +1,5 @@
 services:
   tensorship-net:
     build: ./admin
+    expose:
+      - "3000"

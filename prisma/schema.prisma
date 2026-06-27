@@ -1,0 +1,118 @@
+// Prisma schema — CHỈ chứa dữ liệu KiotViet KHÔNG quản lý:
+//   bài viết (CMS), nhân sự, chấm công, lịch trực, tài khoản & phân quyền.
+// Doanh số / tồn kho / đơn hàng KHÔNG lưu ở đây — luôn đọc trực tiếp từ KiotViet.
+//
+// Chạy:  npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----- Tài khoản & phân quyền (RBAC) -----
+enum Role {
+  ADMIN // chủ / quản lý: toàn quyền
+  EDITOR // biên tập viên: chỉ quản lý bài viết
+  MANAGER // quản lý ca: chấm công, xếp lịch
+  STAFF // nhân viên: xem lịch của mình, check-in/out
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String?
+  password  String // băm bằng bcrypt/argon2 ở tầng app
+  role      Role       @default(STAFF)
+  employee  Employee?
+  posts     Post[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+// ----- CMS bài viết (yêu cầu: admin biên tập & chỉnh sửa bài) -----
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model Post {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  title       String
+  excerpt     String?
+  content     Json // lưu rich-text (TipTap/Lexical) dạng JSON
+  coverImage  String?
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  author      User       @relation(fields: [authorId], references: [id])
+  authorId    String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([status, publishedAt])
+}
+
+// ----- Nhân sự (database nhân viên, phân công) -----
+model Department {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  employees Employee[]
+}
+
+model Employee {
+  id           String       @id @default(cuid())
+  code         String       @unique // mã NV
+  fullName     String
+  phone        String?
+  position     String? // chức danh
+  department   Department?  @relation(fields: [departmentId], references: [id])
+  departmentId String?
+  user         User?        @relation(fields: [userId], references: [id])
+  userId       String?      @unique
+  active       Boolean      @default(true)
+  hiredAt      DateTime?
+  shifts       ShiftAssignment[]
+  attendances  Attendance[]
+  createdAt    DateTime     @default(now())
+}
+
+// ----- Lịch trực / ca làm -----
+model Shift {
+  id          String            @id @default(cuid())
+  name        String // ví dụ: "Ca sáng", "Ca tối"
+  startTime   String // "08:00"
+  endTime     String // "16:00"
+  assignments ShiftAssignment[]
+}
+
+model ShiftAssignment {
+  id         String   @id @default(cuid())
+  shift      Shift    @relation(fields: [shiftId], references: [id])
+  shiftId    String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  employeeId String
+  date       DateTime // ngày trực
+  note       String?
+
+  @@unique([employeeId, date, shiftId])
+  @@index([date])
+}
+
+// ----- Chấm công -----
+model Attendance {
+  id         String    @id @default(cuid())
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+  employeeId String
+  date       DateTime
+  checkIn    DateTime?
+  checkOut   DateTime?
+  source     String    @default("web") // web | qr | face...
+  note       String?
+
+  @@unique([employeeId, date])
+  @@index([date])
+}

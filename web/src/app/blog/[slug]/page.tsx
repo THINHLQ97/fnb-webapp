@@ -30,7 +30,12 @@ function renderContent(content: unknown): string {
 }
 
 function renderNodes(content: unknown): React.ReactNode[] {
-  if (typeof content === 'string') return [<p key='0'>{content}</p>];
+  if (typeof content === 'string') {
+    return content
+      .split(/\n\s*\n/)
+      .map((para, i) => (para.trim() ? <p key={i} className='my-3 leading-relaxed'>{para.trim()}</p> : null))
+      .filter(Boolean) as React.ReactNode[];
+  }
   if (!content || typeof content !== 'object') return [];
 
   const root = content as { content?: unknown[] };

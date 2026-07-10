@@ -32,6 +32,7 @@ export interface DashboardToday {
 /** Doanh số + số đơn đã bán hôm nay (dựa trên HÓA ĐƠN — giao dịch đã hoàn tất). */
 export async function getDoanhSoHomNay(): Promise<{ doanhSo: number; soDon: number }> {
   const client = getKiotVietClient();
+  if (!client) throw new Error('Thiếu cấu hình KiotViet (KIOTVIET_CLIENT_ID/SECRET/RETAILER).');
   const { from, to } = dayRange();
 
   // invoices.getByDateRange(from, to, params) -> { data, total, ... }
@@ -49,6 +50,7 @@ export async function getDoanhSoHomNay(): Promise<{ doanhSo: number; soDon: numb
 /** Hàng sắp hết — đọc tồn kho và lọc theo ngưỡng. */
 export async function getHangSapHet(nguong = 10): Promise<DashboardToday["hangSapHet"]> {
   const client = getKiotVietClient();
+  if (!client) throw new Error('Thiếu cấu hình KiotViet (KIOTVIET_CLIENT_ID/SECRET/RETAILER).');
 
   // Lấy sản phẩm kèm tồn kho. includeInventory để có mảng inventories theo chi nhánh.
   const res: any = await client.products.list({
@@ -76,6 +78,7 @@ export async function getHangSapHet(nguong = 10): Promise<DashboardToday["hangSa
 /** Phiếu nhập / kho vận gần đây (purchaseOrders). */
 export async function getPhieuNhapGanDay(soLuong = 10) {
   const client = getKiotVietClient();
+  if (!client) throw new Error('Thiếu cấu hình KiotViet (KIOTVIET_CLIENT_ID/SECRET/RETAILER).');
   const res: any = await client.purchaseOrders.list({ pageSize: soLuong });
   return (res?.data ?? []).map((po: any) => ({
     ma: po.code,

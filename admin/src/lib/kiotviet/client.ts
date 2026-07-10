@@ -17,7 +17,7 @@ import { KiotVietClient } from "kiotviet-client-sdk";
 
 let _client: KiotVietClient | null = null;
 
-export function getKiotVietClient(): KiotVietClient {
+export function getKiotVietClient(): KiotVietClient | null {
   if (_client) return _client;
 
   const clientId = process.env.KIOTVIET_CLIENT_ID;
@@ -25,9 +25,8 @@ export function getKiotVietClient(): KiotVietClient {
   const retailerName = process.env.KIOTVIET_RETAILER;
 
   if (!clientId || !clientSecret || !retailerName) {
-    throw new Error(
-      "Thiếu cấu hình KiotViet. Hãy đặt KIOTVIET_CLIENT_ID, KIOTVIET_CLIENT_SECRET, KIOTVIET_RETAILER trong .env"
-    );
+    // Trả null để caller graceful degrade thay vì crash toàn app
+    return null;
   }
 
   _client = new KiotVietClient({

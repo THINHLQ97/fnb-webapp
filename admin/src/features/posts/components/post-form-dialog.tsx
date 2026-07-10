@@ -166,7 +166,8 @@ export function PostFormDialog({ open, onOpenChange, post, onSuccess }: Props) {
               placeholder='Nội dung bài viết. Cách nhau bằng dòng trống để tạo đoạn văn mới.'
             />
             <p className='text-xs text-muted-foreground'>
-              Mỗi đoạn văn cách nhau 1 dòng trống. Sẽ nâng cấp lên rich-text editor sau.
+              Hỗ trợ Markdown: <code>## Tiêu đề</code>, <code>**đậm**</code>, <code>*nghiêng*</code>,{' '}
+              <code>- danh sách</code>, <code>[link](url)</code>. Đoạn văn cách nhau bằng 1 dòng trống.
             </p>
           </div>
 

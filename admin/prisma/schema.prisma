@@ -138,3 +138,29 @@ model Attendance {
   @@unique([employeeId, date])
   @@index([date])
 }
+
+// ----- Cấu hình website (hero, contact, giờ mở cửa) -----
+// Key-value, value là JSON để linh hoạt. Admin sửa qua UI, web đọc runtime.
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+// ----- Menu overlay: đè metadata lên sản phẩm KiotViet -----
+// KiotViet là nguồn sự thật cho tên/giá; đây chỉ thêm tag, ảnh custom,
+// đánh dấu highlight/featured để marketing.
+model MenuItemOverride {
+  id          String   @id @default(cuid())
+  kiotvietId  Int      @unique
+  highlight   Boolean  @default(false) // hiển thị badge "Best seller"
+  featured    Boolean  @default(false) // ghim lên đầu danh sách menu
+  customImage String?
+  tag         String? // "MỚI", "GIẢM 20%", "HOT"...
+  note        String? // ghi chú nội bộ cho quản lý
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([featured])
+  @@index([highlight])
+}

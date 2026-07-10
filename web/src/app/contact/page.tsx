@@ -1,19 +1,24 @@
 import type { Metadata } from 'next';
 import { MapPin, Phone, Mail, Clock } from 'lucide-react';
+import { getContact } from '@/lib/site-settings';
 
 export const metadata: Metadata = {
   title: 'Liên hệ',
   description: 'Liên hệ F&B Store — địa chỉ, số điện thoại và giờ mở cửa.',
 };
 
-const info = [
-  { icon: MapPin, label: 'Địa chỉ', value: '123 Đường ABC, Quận 1, TP.HCM' },
-  { icon: Phone, label: 'Điện thoại', value: '0909 123 456' },
-  { icon: Mail, label: 'Email', value: 'hello@fnbstore.vn' },
-  { icon: Clock, label: 'Giờ mở cửa', value: '7:00 – 22:00 hàng ngày' },
-];
+export const revalidate = 60;
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const contact = await getContact();
+
+  const info = [
+    { icon: MapPin, label: 'Địa chỉ', value: contact.address },
+    { icon: Phone, label: 'Điện thoại', value: contact.phone },
+    { icon: Mail, label: 'Email', value: contact.email },
+    { icon: Clock, label: 'Giờ mở cửa', value: contact.hoursShort },
+  ];
+
   return (
     <div className='py-12'>
       <div className='container-main'>

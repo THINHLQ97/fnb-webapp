@@ -41,6 +41,22 @@ export const navGroups: NavGroup[] = [
         isActive: false,
         items: [],
         access: { roles: ['ADMIN', 'EDITOR'] }
+      },
+      {
+        title: 'Menu (KiotViet)',
+        url: '/dashboard/menu',
+        icon: 'product',
+        isActive: false,
+        items: [],
+        access: { roles: ['ADMIN', 'EDITOR'] }
+      },
+      {
+        title: 'Cấu hình website',
+        url: '/dashboard/settings',
+        icon: 'settings',
+        isActive: false,
+        items: [],
+        access: { roles: ['ADMIN'] }
       }
     ]
   },

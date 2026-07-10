@@ -22,6 +22,14 @@ const routeMapping: Record<string, BreadcrumbItem[]> = {
     { title: 'Tổng quan', link: '/dashboard' },
     { title: 'Bài viết', link: '/dashboard/posts' },
   ],
+  '/dashboard/menu': [
+    { title: 'Tổng quan', link: '/dashboard' },
+    { title: 'Menu KiotViet', link: '/dashboard/menu' },
+  ],
+  '/dashboard/settings': [
+    { title: 'Tổng quan', link: '/dashboard' },
+    { title: 'Cấu hình website', link: '/dashboard/settings' },
+  ],
   '/dashboard/users': [
     { title: 'Tổng quan', link: '/dashboard' },
     { title: 'Người dùng', link: '/dashboard/users' },

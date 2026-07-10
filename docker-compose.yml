@@ -1,0 +1,25 @@
+services:
+  tensorship-net:
+    image: ts-fnb-webapp-tensorship-net:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_VERSION: ${NODE_VERSION:-22-slim}
+        AUTH_SECRET: ${AUTH_SECRET:-}
+        DATABASE_URL: ${DATABASE_URL:-}
+        KIOTVIET_BASE_URL: ${KIOTVIET_BASE_URL:-}
+        KIOTVIET_CLIENT_SECRET: ${KIOTVIET_CLIENT_SECRET:-}
+        KIOTVIET_RETAILER: ${KIOTVIET_RETAILER:-}
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      DATABASE_URL: ${DATABASE_URL:-}
+      KIOTVIET_BASE_URL: ${KIOTVIET_BASE_URL:-}
+      KIOTVIET_CLIENT_SECRET: ${KIOTVIET_CLIENT_SECRET:-}
+      KIOTVIET_RETAILER: ${KIOTVIET_RETAILER:-}
+    expose:
+      - "3000"
+    restart: unless-stopped

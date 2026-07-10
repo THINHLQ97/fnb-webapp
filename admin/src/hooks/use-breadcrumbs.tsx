@@ -8,18 +8,40 @@ type BreadcrumbItem = {
   link: string;
 };
 
-// This allows to add custom title as well
 const routeMapping: Record<string, BreadcrumbItem[]> = {
-  '/dashboard': [{ title: 'Dashboard', link: '/dashboard' }],
-  '/dashboard/employee': [
-    { title: 'Dashboard', link: '/dashboard' },
-    { title: 'Employee', link: '/dashboard/employee' }
+  '/dashboard': [{ title: 'Tổng quan', link: '/dashboard' }],
+  '/dashboard/overview': [
+    { title: 'Tổng quan', link: '/dashboard' },
+    { title: 'Bảng điều khiển', link: '/dashboard/overview' },
   ],
   '/dashboard/product': [
-    { title: 'Dashboard', link: '/dashboard' },
-    { title: 'Product', link: '/dashboard/product' }
-  ]
-  // Add more custom mappings as needed
+    { title: 'Tổng quan', link: '/dashboard' },
+    { title: 'Sản phẩm', link: '/dashboard/product' },
+  ],
+  '/dashboard/posts': [
+    { title: 'Tổng quan', link: '/dashboard' },
+    { title: 'Bài viết', link: '/dashboard/posts' },
+  ],
+  '/dashboard/users': [
+    { title: 'Tổng quan', link: '/dashboard' },
+    { title: 'Người dùng', link: '/dashboard/users' },
+  ],
+  '/dashboard/employees': [
+    { title: 'Tổng quan', link: '/dashboard' },
+    { title: 'Nhân viên', link: '/dashboard/employees' },
+  ],
+  '/dashboard/attendance': [
+    { title: 'Tổng quan', link: '/dashboard' },
+    { title: 'Chấm công', link: '/dashboard/attendance' },
+  ],
+  '/dashboard/shifts': [
+    { title: 'Tổng quan', link: '/dashboard' },
+    { title: 'Lịch trực', link: '/dashboard/shifts' },
+  ],
+  '/dashboard/profile': [
+    { title: 'Tổng quan', link: '/dashboard' },
+    { title: 'Hồ sơ', link: '/dashboard/profile' },
+  ],
 };
 
 export function useBreadcrumbs() {

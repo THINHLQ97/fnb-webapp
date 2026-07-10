@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { Calendar, User } from 'lucide-react';
 import { getPublishedPosts } from '@/lib/posts';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Blog',
   description: 'Tin tức, chia sẻ và câu chuyện từ F&B Store.',

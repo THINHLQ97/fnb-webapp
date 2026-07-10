@@ -14,9 +14,23 @@ RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
 RUN mkdir -p public
+
+# Vibe Hosting truyền các biến này qua --build-arg
+ARG AUTH_SECRET
+ARG DATABASE_URL
+ARG KIOTVIET_BASE_URL
+ARG KIOTVIET_CLIENT_SECRET
+ARG KIOTVIET_RETAILER
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV BUILD_STANDALONE=true
+ENV AUTH_SECRET=$AUTH_SECRET
+ENV DATABASE_URL=$DATABASE_URL
+ENV KIOTVIET_BASE_URL=$KIOTVIET_BASE_URL
+ENV KIOTVIET_CLIENT_SECRET=$KIOTVIET_CLIENT_SECRET
+ENV KIOTVIET_RETAILER=$KIOTVIET_RETAILER
+
 RUN npx prisma generate && npm run build
 
 # Stage 3: Run

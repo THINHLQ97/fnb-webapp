@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Calendar, User } from 'lucide-react';
-import { getPostBySlug, getPublishedPosts } from '@/lib/posts';
+import { getPostBySlug } from '@/lib/posts';
+
+export const dynamic = 'force-dynamic';
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -11,11 +13,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await getPostBySlug(slug);
   if (!post) return { title: 'Không tìm thấy bài viết' };
   return { title: post.title, description: post.excerpt ?? undefined };
-}
-
-export async function generateStaticParams() {
-  const posts = await getPublishedPosts();
-  return posts.map((p) => ({ slug: p.slug }));
 }
 
 function renderContent(content: unknown): string {

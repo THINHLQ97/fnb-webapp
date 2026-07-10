@@ -13,6 +13,9 @@ type Item = {
   image: string | null;
   categoryId: number | null;
   categoryName: string;
+  tag: string | null;
+  highlight: boolean;
+  featured: boolean;
 };
 
 type Category = { id: number; name: string };
@@ -72,8 +75,23 @@ export function MenuFilter({
         {filtered.map((item) => (
           <div
             key={item.id}
-            className='group overflow-hidden rounded-2xl bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-md'
+            className='group relative overflow-hidden rounded-2xl bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-md'
           >
+            {/* Badges overlay */}
+            <div className='absolute left-3 top-3 z-10 flex flex-col gap-1'>
+              {item.tag && (
+                <span className='rounded-full bg-red-500 px-2.5 py-0.5 text-xs font-semibold text-white shadow'>
+                  {item.tag}
+                </span>
+              )}
+              {item.highlight && (
+                <span className='rounded-full bg-amber-400 px-2.5 py-0.5 text-xs font-semibold text-white shadow flex items-center gap-1'>
+                  <Star className='h-3 w-3' fill='currentColor' />
+                  Best seller
+                </span>
+              )}
+            </div>
+
             <div className='flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-primary/5 to-accent/10'>
               {item.image ? (
                 <img

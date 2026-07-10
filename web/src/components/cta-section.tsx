@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { MapPin, Clock } from 'lucide-react';
+import { getContact } from '@/lib/site-settings';
 
-export function CtaSection() {
+export async function CtaSection() {
+  const contact = await getContact();
+
   return (
     <section className='bg-gradient-to-r from-primary to-primary-dark py-16 text-white'>
       <div className='container-main text-center'>
@@ -13,11 +16,11 @@ export function CtaSection() {
         <div className='mt-8 flex flex-col items-center justify-center gap-6 sm:flex-row'>
           <div className='flex items-center gap-2'>
             <MapPin className='h-5 w-5' />
-            <span>123 Đường ABC, Quận 1, TP.HCM</span>
+            <span>{contact.address}</span>
           </div>
           <div className='flex items-center gap-2'>
             <Clock className='h-5 w-5' />
-            <span>7:00 – 22:00 hàng ngày</span>
+            <span>{contact.hoursShort}</span>
           </div>
         </div>
 

@@ -138,3 +138,26 @@ model Attendance {
   @@unique([employeeId, date])
   @@index([date])
 }
+
+// ----- Cấu hình website (hero, contact, giờ mở cửa) -----
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+// ----- Menu overlay: đè metadata lên sản phẩm KiotViet -----
+model MenuItemOverride {
+  id          String   @id @default(cuid())
+  kiotvietId  Int      @unique
+  highlight   Boolean  @default(false)
+  featured    Boolean  @default(false)
+  customImage String?
+  tag         String?
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([featured])
+  @@index([highlight])
+}

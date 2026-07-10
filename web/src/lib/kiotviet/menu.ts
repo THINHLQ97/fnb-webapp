@@ -1,4 +1,5 @@
 import { getKiotVietClient } from './client';
+import { prisma } from '../prisma';
 
 export type MenuItem = {
   id: number;
@@ -9,6 +10,9 @@ export type MenuItem = {
   image: string | null;
   categoryId: number | null;
   categoryName: string;
+  tag: string | null;
+  highlight: boolean;
+  featured: boolean;
 };
 
 export type MenuCategory = {
@@ -31,10 +35,10 @@ const FALLBACK: MenuData = {
     { id: -3, name: 'Nước ép' },
   ],
   items: [
-    { id: 1, code: 'DEMO-01', name: 'Cà phê sữa đá', price: 29000, description: 'Cà phê phin với sữa đặc', image: null, categoryId: -1, categoryName: 'Cà phê' },
-    { id: 2, code: 'DEMO-02', name: 'Bạc xỉu', price: 32000, description: 'Cà phê nhẹ, nhiều sữa', image: null, categoryId: -1, categoryName: 'Cà phê' },
-    { id: 3, code: 'DEMO-03', name: 'Trà đào cam sả', price: 35000, description: 'Trà hoa cúc, đào tươi', image: null, categoryId: -2, categoryName: 'Trà' },
-    { id: 4, code: 'DEMO-04', name: 'Nước ép cam', price: 30000, description: 'Cam tươi ép nguyên chất', image: null, categoryId: -3, categoryName: 'Nước ép' },
+    { id: 1, code: 'DEMO-01', name: 'Cà phê sữa đá', price: 29000, description: 'Cà phê phin với sữa đặc', image: null, categoryId: -1, categoryName: 'Cà phê', tag: 'DEMO', highlight: true, featured: true },
+    { id: 2, code: 'DEMO-02', name: 'Bạc xỉu', price: 32000, description: 'Cà phê nhẹ, nhiều sữa', image: null, categoryId: -1, categoryName: 'Cà phê', tag: null, highlight: false, featured: false },
+    { id: 3, code: 'DEMO-03', name: 'Trà đào cam sả', price: 35000, description: 'Trà hoa cúc, đào tươi', image: null, categoryId: -2, categoryName: 'Trà', tag: null, highlight: false, featured: false },
+    { id: 4, code: 'DEMO-04', name: 'Nước ép cam', price: 30000, description: 'Cam tươi ép nguyên chất', image: null, categoryId: -3, categoryName: 'Nước ép', tag: null, highlight: false, featured: false },
   ],
 };
 
@@ -46,12 +50,28 @@ function firstImage(p: Record<string, unknown>): string | null {
   return null;
 }
 
+type OverrideRow = {
+  kiotvietId: number;
+  highlight: boolean;
+  featured: boolean;
+  customImage: string | null;
+  tag: string | null;
+};
+
+async function safeGetOverrides(): Promise<Map<number, OverrideRow>> {
+  try {
+    const rows = await prisma.menuItemOverride.findMany();
+    return new Map(rows.map((r) => [r.kiotvietId, r]));
+  } catch {
+    return new Map();
+  }
+}
+
 export async function getMenu(): Promise<MenuData> {
   const client = getKiotVietClient();
   if (!client) return { ...FALLBACK, error: 'Chưa cấu hình KiotViet — hiển thị menu mẫu' };
 
   try {
-    // Product list (chỉ lấy sản phẩm còn bán)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const productRes: any = await (client as any).products.list({
       pageSize: 100,
@@ -60,22 +80,34 @@ export async function getMenu(): Promise<MenuData> {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rawItems: any[] = productRes?.data ?? [];
+    const overrides = await safeGetOverrides();
 
     const items: MenuItem[] = rawItems
       .filter((p) => p.allowsSale !== false && p.isActive !== false)
-      .map((p) => ({
-        id: Number(p.id),
-        code: String(p.code ?? ''),
-        name: String(p.name ?? p.fullName ?? ''),
-        price: Number(p.basePrice ?? p.price ?? 0),
-        description: (p.description as string | null) ?? null,
-        image: firstImage(p),
-        categoryId: p.categoryId != null ? Number(p.categoryId) : null,
-        categoryName: String(p.categoryName ?? 'Khác'),
-      }))
-      .filter((m) => m.name);
+      .map((p) => {
+        const id = Number(p.id);
+        const o = overrides.get(id);
+        return {
+          id,
+          code: String(p.code ?? ''),
+          name: String(p.name ?? p.fullName ?? ''),
+          price: Number(p.basePrice ?? p.price ?? 0),
+          description: (p.description as string | null) ?? null,
+          image: o?.customImage ?? firstImage(p),
+          categoryId: p.categoryId != null ? Number(p.categoryId) : null,
+          categoryName: String(p.categoryName ?? 'Khác'),
+          tag: o?.tag ?? null,
+          highlight: o?.highlight ?? false,
+          featured: o?.featured ?? false,
+        };
+      })
+      .filter((m) => m.name)
+      .sort((a, b) => {
+        // Featured lên đầu; sau đó theo tên
+        if (a.featured !== b.featured) return a.featured ? -1 : 1;
+        return a.name.localeCompare(b.name, 'vi');
+      });
 
-    // Tự dựng danh sách category từ chính sản phẩm (không cần gọi thêm endpoint)
     const catMap = new Map<number, string>();
     for (const m of items) {
       if (m.categoryId != null && !catMap.has(m.categoryId)) {

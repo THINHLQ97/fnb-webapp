@@ -48,9 +48,23 @@ const DEFAULT_FOOTER: FooterSettings = {
 };
 
 async function readSetting<T>(key: string, fallback: T): Promise<T> {
-  const row = await prisma.siteSetting.findUnique({ where: { key } });
-  if (!row) return fallback;
-  return { ...fallback, ...(row.value as object) } as T;
+  try {
+    const row = await prisma.siteSetting.findUnique({ where: { key } });
+    if (!row) return fallback;
+    return { ...fallback, ...(row.value as object) } as T;
+  } catch {
+    // Bảng chưa migrate — trả fallback để page vẫn render
+    return fallback;
+  }
+}
+
+export async function isSiteSettingReady(): Promise<boolean> {
+  try {
+    await prisma.siteSetting.count();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function getHero() {

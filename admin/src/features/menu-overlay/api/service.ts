@@ -47,10 +47,15 @@ export async function getMenuOverlay(): Promise<{
     const raw: any[] = res?.data ?? [];
 
     const kiotvietIds = raw.map((p) => Number(p.id)).filter((n) => Number.isFinite(n));
-    const overrides = await prisma.menuItemOverride.findMany({
-      where: { kiotvietId: { in: kiotvietIds } },
-    });
-    const overrideMap = new Map(overrides.map((o) => [o.kiotvietId, o]));
+    let overrideMap = new Map<number, Awaited<ReturnType<typeof prisma.menuItemOverride.findMany>>[number]>();
+    try {
+      const overrides = await prisma.menuItemOverride.findMany({
+        where: { kiotvietId: { in: kiotvietIds } },
+      });
+      overrideMap = new Map(overrides.map((o) => [o.kiotvietId, o]));
+    } catch {
+      // Bảng chưa migrate — vẫn hiển thị sản phẩm KiotViet, chỉ không có overlay
+    }
 
     const items: MenuOverlayItem[] = raw.map((p) => {
       const id = Number(p.id);
@@ -87,6 +92,15 @@ export type OverrideInput = {
   tag?: string;
   note?: string;
 };
+
+export async function isMenuOverrideReady(): Promise<boolean> {
+  try {
+    await prisma.menuItemOverride.count();
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export async function saveOverride(kiotvietId: number, data: OverrideInput) {
   return prisma.menuItemOverride.upsert({

@@ -1,33 +1,20 @@
 import { NavGroup } from '@/types';
 
+// Ghi chú: nav được hiển thị cho MỌI user login. Server actions vẫn kiểm tra
+// quyền — RBAC được thực thi ở tầng nghiệp vụ, không phải ở tầng nhìn thấy.
+// Với quán F&B nhỏ (1-2 quản lý), ẩn nav gây nhầm lẫn nhiều hơn là bảo vệ.
+
 export const navGroups: NavGroup[] = [
   {
     label: 'Tổng quan',
     items: [
       {
-        title: 'Dashboard',
+        title: 'Bảng điều khiển',
         url: '/dashboard/overview',
         icon: 'dashboard',
         isActive: false,
         shortcut: ['d', 'd'],
         items: []
-      },
-      {
-        title: 'Sản phẩm',
-        url: '/dashboard/product',
-        icon: 'product',
-        shortcut: ['p', 'p'],
-        isActive: false,
-        items: []
-      },
-      {
-        title: 'Người dùng',
-        url: '/dashboard/users',
-        icon: 'teams',
-        shortcut: ['u', 'u'],
-        isActive: false,
-        items: [],
-        access: { roles: ['ADMIN'] }
       }
     ]
   },
@@ -39,24 +26,23 @@ export const navGroups: NavGroup[] = [
         url: '/dashboard/posts',
         icon: 'post',
         isActive: false,
-        items: [],
-        access: { roles: ['ADMIN', 'EDITOR'] }
+        shortcut: ['b', 'b'],
+        items: []
       },
       {
-        title: 'Menu (KiotViet)',
+        title: 'Menu',
         url: '/dashboard/menu',
         icon: 'product',
         isActive: false,
-        items: [],
-        access: { roles: ['ADMIN', 'EDITOR'] }
+        shortcut: ['m', 'm'],
+        items: []
       },
       {
         title: 'Cấu hình website',
         url: '/dashboard/settings',
         icon: 'settings',
         isActive: false,
-        items: [],
-        access: { roles: ['ADMIN'] }
+        items: []
       }
     ]
   },
@@ -68,8 +54,7 @@ export const navGroups: NavGroup[] = [
         url: '/dashboard/employees',
         icon: 'teams',
         isActive: false,
-        items: [],
-        access: { roles: ['ADMIN', 'MANAGER'] }
+        items: []
       },
       {
         title: 'Chấm công',
@@ -83,14 +68,20 @@ export const navGroups: NavGroup[] = [
         url: '/dashboard/shifts',
         icon: 'calendar',
         isActive: false,
-        items: [],
-        access: { roles: ['ADMIN', 'MANAGER'] }
+        items: []
       }
     ]
   },
   {
     label: 'Hệ thống',
     items: [
+      {
+        title: 'Người dùng',
+        url: '/dashboard/users',
+        icon: 'teams',
+        isActive: false,
+        items: []
+      },
       {
         title: 'Khởi tạo',
         url: '/dashboard/setup',
@@ -112,12 +103,10 @@ export const navGroups: NavGroup[] = [
           {
             title: 'Hồ sơ',
             url: '/dashboard/profile',
-            icon: 'profile',
-            shortcut: ['m', 'm']
+            icon: 'profile'
           },
           {
-            title: 'Đăng nhập',
-            shortcut: ['l', 'l'],
+            title: 'Đăng xuất',
             url: '/',
             icon: 'login'
           }

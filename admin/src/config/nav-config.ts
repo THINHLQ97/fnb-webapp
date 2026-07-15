@@ -89,6 +89,18 @@ export const navGroups: NavGroup[] = [
     ]
   },
   {
+    label: 'Hệ thống',
+    items: [
+      {
+        title: 'Khởi tạo',
+        url: '/dashboard/setup',
+        icon: 'settings',
+        isActive: false,
+        items: []
+      }
+    ]
+  },
+  {
     label: '',
     items: [
       {

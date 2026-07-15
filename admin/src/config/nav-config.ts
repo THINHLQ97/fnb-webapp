@@ -43,6 +43,13 @@ export const navGroups: NavGroup[] = [
         icon: 'settings',
         isActive: false,
         items: []
+      },
+      {
+        title: 'Tin nhắn khách',
+        url: '/dashboard/messages',
+        icon: 'mail',
+        isActive: false,
+        items: []
       }
     ]
   },

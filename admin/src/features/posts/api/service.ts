@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
+import { revalidateWebPaths } from '@/lib/revalidate-web';
 
 export type PostFilters = {
   page?: number;
@@ -71,7 +72,7 @@ export async function createPost(data: PostInput) {
   if (!session?.user?.id) throw new Error('Chưa đăng nhập');
 
   const slug = data.slug?.trim() || slugify(data.title);
-  return prisma.post.create({
+  const post = await prisma.post.create({
     data: {
       title: data.title,
       slug,
@@ -83,6 +84,8 @@ export async function createPost(data: PostInput) {
       authorId: session.user.id,
     },
   });
+  revalidateWebPaths(['/blog', `/blog/${slug}`]);
+  return post;
 }
 
 export async function updatePost(id: string, data: PostInput) {
@@ -92,7 +95,7 @@ export async function updatePost(id: string, data: PostInput) {
   const slug = data.slug?.trim() || slugify(data.title);
   const publishing = data.status === 'PUBLISHED' && existing.status !== 'PUBLISHED';
 
-  return prisma.post.update({
+  const updated = await prisma.post.update({
     where: { id },
     data: {
       title: data.title,
@@ -104,8 +107,18 @@ export async function updatePost(id: string, data: PostInput) {
       publishedAt: publishing ? new Date() : existing.publishedAt,
     },
   });
+
+  // Revalidate cả slug cũ (nếu vừa đổi) và slug mới
+  const paths = new Set(['/blog', `/blog/${slug}`]);
+  if (existing.slug !== slug) paths.add(`/blog/${existing.slug}`);
+  revalidateWebPaths(Array.from(paths));
+
+  return updated;
 }
 
 export async function deletePost(id: string) {
-  return prisma.post.delete({ where: { id } });
+  const existing = await prisma.post.findUnique({ where: { id } });
+  const deleted = await prisma.post.delete({ where: { id } });
+  if (existing) revalidateWebPaths(['/blog', `/blog/${existing.slug}`]);
+  return deleted;
 }

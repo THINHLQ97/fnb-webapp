@@ -147,6 +147,20 @@ model SiteSetting {
   updatedAt DateTime @updatedAt
 }
 
+// ----- Tin nhắn liên hệ từ khách (form /contact trên website) -----
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  note      String? // ghi chú nội bộ khi xử lý
+  createdAt DateTime @default(now())
+
+  @@index([read, createdAt])
+}
+
 // ----- Menu overlay: đè metadata lên sản phẩm KiotViet -----
 // KiotViet là nguồn sự thật cho tên/giá; đây chỉ thêm tag, ảnh custom,
 // đánh dấu highlight/featured để marketing.

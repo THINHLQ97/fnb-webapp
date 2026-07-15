@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { MapPin, Phone, Mail, Clock } from 'lucide-react';
 import { getContact } from '@/lib/site-settings';
+import { ContactForm } from '@/components/contact-form';
 
 export const metadata: Metadata = {
   title: 'Liên hệ',
@@ -48,38 +49,7 @@ export default async function ContactPage() {
           <div className='rounded-2xl bg-card p-6 shadow-sm'>
             <h2 className='text-xl font-bold'>Gửi tin nhắn</h2>
             <p className='mt-1 text-sm text-muted'>Chúng tôi sẽ phản hồi sớm nhất có thể.</p>
-            <form className='mt-6 space-y-4'>
-              <div>
-                <label className='mb-1 block text-sm font-medium'>Họ tên</label>
-                <input
-                  type='text'
-                  className='w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary'
-                  placeholder='Nguyễn Văn A'
-                />
-              </div>
-              <div>
-                <label className='mb-1 block text-sm font-medium'>Email</label>
-                <input
-                  type='email'
-                  className='w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary'
-                  placeholder='email@example.com'
-                />
-              </div>
-              <div>
-                <label className='mb-1 block text-sm font-medium'>Tin nhắn</label>
-                <textarea
-                  rows={4}
-                  className='w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary'
-                  placeholder='Nội dung tin nhắn...'
-                />
-              </div>
-              <button
-                type='submit'
-                className='w-full rounded-lg bg-primary py-2.5 font-semibold text-white transition-colors hover:bg-primary-dark'
-              >
-                Gửi tin nhắn
-              </button>
-            </form>
+            <ContactForm />
           </div>
         </div>
       </div>

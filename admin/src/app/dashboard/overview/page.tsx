@@ -5,6 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
+import { getKiotVietClient } from '@/lib/kiotviet/client';
+import { getDoanhSoHomNay, getHangSapHet } from '@/lib/kiotviet/dashboard';
+
+const vndFmt = new Intl.NumberFormat('vi-VN', {
+  style: 'currency',
+  currency: 'VND',
+  maximumFractionDigits: 0,
+});
 
 export const metadata = {
   title: 'Dashboard: Bảng điều khiển',
@@ -52,9 +60,39 @@ async function loadStats() {
   }
 }
 
+type KiotStats = {
+  ok: boolean;
+  doanhSo: number;
+  soDon: number;
+  lowStock: Array<{ ten: string; ma: string; tonKho: number }>;
+  reason?: string;
+};
+
+async function loadKiotViet(): Promise<KiotStats> {
+  const client = getKiotVietClient();
+  if (!client) {
+    return { ok: false, doanhSo: 0, soDon: 0, lowStock: [], reason: 'Chưa cấu hình KiotViet' };
+  }
+  try {
+    const [ds, low] = await Promise.all([
+      getDoanhSoHomNay().catch(() => ({ doanhSo: 0, soDon: 0 })),
+      getHangSapHet(5).catch(() => []),
+    ]);
+    return { ok: true, doanhSo: ds.doanhSo, soDon: ds.soDon, lowStock: low };
+  } catch (err) {
+    return {
+      ok: false,
+      doanhSo: 0,
+      soDon: 0,
+      lowStock: [],
+      reason: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
 export default async function OverviewPage() {
   const session = await auth();
-  const stats = await loadStats();
+  const [stats, kiot] = await Promise.all([loadStats(), loadKiotViet()]);
 
   return (
     <PageContainer>
@@ -78,6 +116,74 @@ export default async function OverviewPage() {
             để bootstrap.
           </div>
         )}
+
+        {/* KiotViet — doanh số & tồn kho */}
+        <section>
+          <div className='mb-3 flex items-center justify-between'>
+            <h3 className='text-lg font-semibold'>Bán hàng hôm nay (KiotViet)</h3>
+            <Badge variant={kiot.ok ? 'default' : 'secondary'}>
+              {kiot.ok ? 'Kết nối OK' : 'Chưa kết nối'}
+            </Badge>
+          </div>
+
+          {!kiot.ok ? (
+            <div className='rounded-md border border-dashed p-4 text-sm text-muted-foreground'>
+              {kiot.reason ?? 'Không lấy được dữ liệu KiotViet'}. Vào{' '}
+              <Link href='/dashboard/setup' className='underline'>
+                Khởi tạo
+              </Link>{' '}
+              để xem hướng dẫn cấu hình KIOTVIET_* env vars.
+            </div>
+          ) : (
+            <div className='grid gap-4 md:grid-cols-3'>
+              <Card>
+                <CardHeader>
+                  <CardDescription className='flex items-center gap-2'>
+                    <Icons.trendingUp className='h-4 w-4' />
+                    Doanh số hôm nay
+                  </CardDescription>
+                  <CardTitle className='text-2xl font-semibold tabular-nums'>
+                    {vndFmt.format(kiot.doanhSo)}
+                  </CardTitle>
+                </CardHeader>
+                <CardFooter>
+                  <Badge variant='outline'>{kiot.soDon} hóa đơn</Badge>
+                </CardFooter>
+              </Card>
+
+              <Card className='md:col-span-2'>
+                <CardHeader>
+                  <CardDescription className='flex items-center gap-2'>
+                    <Icons.warning className='h-4 w-4' />
+                    Hàng sắp hết (tồn ≤ 10)
+                  </CardDescription>
+                  <CardTitle className='text-2xl font-semibold tabular-nums'>
+                    {kiot.lowStock.length}
+                  </CardTitle>
+                </CardHeader>
+                <CardFooter>
+                  {kiot.lowStock.length === 0 ? (
+                    <p className='text-sm text-muted-foreground'>Không có sản phẩm nào sắp hết.</p>
+                  ) : (
+                    <ul className='w-full space-y-1 text-sm'>
+                      {kiot.lowStock.map((p) => (
+                        <li key={p.ma} className='flex items-center justify-between'>
+                          <span className='truncate' title={p.ten}>
+                            <span className='font-mono text-xs text-muted-foreground'>
+                              {p.ma}
+                            </span>{' '}
+                            {p.ten}
+                          </span>
+                          <span className='shrink-0 font-medium text-red-600'>còn {p.tonKho}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardFooter>
+              </Card>
+            </div>
+          )}
+        </section>
 
         <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
           <StatCard

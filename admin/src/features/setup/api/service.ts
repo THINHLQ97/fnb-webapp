@@ -27,6 +27,19 @@ const MIGRATION_SQL = [
   `CREATE UNIQUE INDEX IF NOT EXISTS "MenuItemOverride_kiotvietId_key" ON "MenuItemOverride"("kiotvietId");`,
   `CREATE INDEX IF NOT EXISTS "MenuItemOverride_featured_idx" ON "MenuItemOverride"("featured");`,
   `CREATE INDEX IF NOT EXISTS "MenuItemOverride_highlight_idx" ON "MenuItemOverride"("highlight");`,
+
+  `CREATE TABLE IF NOT EXISTS "ContactMessage" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "phone" TEXT,
+    "message" TEXT NOT NULL,
+    "read" BOOLEAN NOT NULL DEFAULT false,
+    "note" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "ContactMessage_pkey" PRIMARY KEY ("id")
+  );`,
+  `CREATE INDEX IF NOT EXISTS "ContactMessage_read_createdAt_idx" ON "ContactMessage"("read", "createdAt");`,
 ];
 
 const SAMPLE_POSTS = [
@@ -115,6 +128,7 @@ export type SetupStatus = {
   postCount: number;
   siteSettingTableExists: boolean;
   menuOverrideTableExists: boolean;
+  contactMessageTableExists: boolean;
 };
 
 async function tableExists(tableName: string): Promise<boolean> {
@@ -143,10 +157,12 @@ export async function getSetupStatus(): Promise<SetupStatus> {
   }
 
   const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
-  const [siteSettingTableExists, menuOverrideTableExists] = await Promise.all([
-    tableExists('SiteSetting'),
-    tableExists('MenuItemOverride'),
-  ]);
+  const [siteSettingTableExists, menuOverrideTableExists, contactMessageTableExists] =
+    await Promise.all([
+      tableExists('SiteSetting'),
+      tableExists('MenuItemOverride'),
+      tableExists('ContactMessage'),
+    ]);
 
   let postCount = 0;
   try {
@@ -155,7 +171,14 @@ export async function getSetupStatus(): Promise<SetupStatus> {
     postCount = 0;
   }
 
-  return { user, adminCount, postCount, siteSettingTableExists, menuOverrideTableExists };
+  return {
+    user,
+    adminCount,
+    postCount,
+    siteSettingTableExists,
+    menuOverrideTableExists,
+    contactMessageTableExists,
+  };
 }
 
 export async function runMigration(): Promise<{ ok: boolean; message: string }> {

@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { getKiotVietClient } from '@/lib/kiotviet/client';
+import { revalidateWebPaths } from '@/lib/revalidate-web';
 
 export type MenuOverlayItem = {
   kiotvietId: number;
@@ -103,7 +104,7 @@ export async function isMenuOverrideReady(): Promise<boolean> {
 }
 
 export async function saveOverride(kiotvietId: number, data: OverrideInput) {
-  return prisma.menuItemOverride.upsert({
+  const result = await prisma.menuItemOverride.upsert({
     where: { kiotvietId },
     create: {
       kiotvietId,
@@ -121,8 +122,11 @@ export async function saveOverride(kiotvietId: number, data: OverrideInput) {
       note: data.note || null,
     },
   });
+  revalidateWebPaths(['/menu', '/']);
+  return result;
 }
 
 export async function clearOverride(kiotvietId: number) {
   await prisma.menuItemOverride.deleteMany({ where: { kiotvietId } });
+  revalidateWebPaths(['/menu', '/']);
 }

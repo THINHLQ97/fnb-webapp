@@ -1,6 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
+import { revalidateWebPaths } from '@/lib/revalidate-web';
 
 export type HeroSettings = {
   badge: string;
@@ -87,14 +88,21 @@ async function saveSetting(key: string, value: object) {
   });
 }
 
+// Hero + Footer ảnh hưởng tất cả trang; contact ảnh hưởng /contact + footer.
+// Đơn giản: revalidate hết các trang tĩnh chính.
+const AFFECTED_WEB_PATHS = ['/', '/contact', '/menu', '/about', '/blog'];
+
 export async function saveHero(data: HeroSettings) {
   await saveSetting('hero', data);
+  revalidateWebPaths(AFFECTED_WEB_PATHS);
 }
 
 export async function saveContact(data: ContactSettings) {
   await saveSetting('contact', data);
+  revalidateWebPaths(AFFECTED_WEB_PATHS);
 }
 
 export async function saveFooter(data: FooterSettings) {
   await saveSetting('footer', data);
+  revalidateWebPaths(AFFECTED_WEB_PATHS);
 }

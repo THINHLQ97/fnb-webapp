@@ -146,6 +146,20 @@ model SiteSetting {
   updatedAt DateTime @updatedAt
 }
 
+// ----- Tin nhắn liên hệ từ khách -----
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([read, createdAt])
+}
+
 // ----- Menu overlay: đè metadata lên sản phẩm KiotViet -----
 model MenuItemOverride {
   id          String   @id @default(cuid())

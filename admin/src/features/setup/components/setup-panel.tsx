@@ -30,7 +30,12 @@ export function SetupPanel({ initialStatus }: { initialStatus: SetupStatus }) {
       const r = await runMigration();
       setMigrationResult(r);
       if (r.ok) {
-        setStatus({ ...status, siteSettingTableExists: true, menuOverrideTableExists: true });
+        setStatus({
+          ...status,
+          siteSettingTableExists: true,
+          menuOverrideTableExists: true,
+          contactMessageTableExists: true,
+        });
       }
     });
   }
@@ -53,7 +58,14 @@ export function SetupPanel({ initialStatus }: { initialStatus: SetupStatus }) {
     });
   }
 
-  const { user, adminCount, postCount, siteSettingTableExists, menuOverrideTableExists } = status;
+  const {
+    user,
+    adminCount,
+    postCount,
+    siteSettingTableExists,
+    menuOverrideTableExists,
+    contactMessageTableExists,
+  } = status;
 
   const canPromote = adminCount === 0 && !!user;
   const alreadyAdmin = user?.role === 'ADMIN';
@@ -90,20 +102,30 @@ export function SetupPanel({ initialStatus }: { initialStatus: SetupStatus }) {
               </Badge>
             }
           />
+          <StatusRow
+            label='Bảng ContactMessage'
+            value={
+              <Badge variant={contactMessageTableExists ? 'default' : 'destructive'}>
+                {contactMessageTableExists ? 'Đã tồn tại' : 'Chưa có'}
+              </Badge>
+            }
+          />
         </div>
       </section>
 
       {/* Step 1: Migration */}
       <SetupStep
         num={1}
-        title='Tạo 2 bảng mới trong Postgres'
-        description='Chạy CREATE TABLE IF NOT EXISTS cho SiteSetting + MenuItemOverride. An toàn để bấm nhiều lần.'
+        title='Tạo bảng mới trong Postgres'
+        description='Chạy CREATE TABLE IF NOT EXISTS cho SiteSetting + MenuItemOverride + ContactMessage. An toàn để bấm nhiều lần.'
         buttonLabel={
-          siteSettingTableExists && menuOverrideTableExists ? 'Chạy lại migration' : 'Chạy migration'
+          siteSettingTableExists && menuOverrideTableExists && contactMessageTableExists
+            ? 'Chạy lại migration'
+            : 'Chạy migration'
         }
         onClick={doMigration}
         disabled={isPending}
-        done={siteSettingTableExists && menuOverrideTableExists}
+        done={siteSettingTableExists && menuOverrideTableExists && contactMessageTableExists}
         result={migrationResult}
       />
 

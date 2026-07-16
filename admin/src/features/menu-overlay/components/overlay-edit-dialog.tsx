@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ImageInput } from '@/components/ui/image-input';
 import { saveOverride, clearOverride } from '../api/service';
 import type { MenuOverlayItem } from '../api/service';
 
@@ -136,16 +137,13 @@ export function OverlayEditDialog({ open, onOpenChange, item, onSuccess }: Props
             />
           </div>
 
-          <div className='space-y-2'>
-            <Label htmlFor='customImage'>Ảnh đè (URL)</Label>
-            <Input
-              id='customImage'
-              type='url'
-              value={customImage}
-              onChange={(e) => setCustomImage(e.target.value)}
-              placeholder='https://... (để trống dùng ảnh KiotViet)'
-            />
-          </div>
+          <ImageInput
+            value={customImage}
+            onChange={setCustomImage}
+            label='Ảnh đè (thay ảnh KiotViet)'
+            helperText='Để trống sẽ dùng ảnh mặc định từ KiotViet. Ảnh tối đa 500 KB.'
+            aspect='square'
+          />
 
           <div className='space-y-2'>
             <Label htmlFor='note'>Ghi chú nội bộ</Label>

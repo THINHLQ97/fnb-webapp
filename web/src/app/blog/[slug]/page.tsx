@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, Calendar, User } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import sanitizeHtml from 'sanitize-html';
 import { getPostBySlug } from '@/lib/posts';
 
 export const dynamic = 'force-dynamic';
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 function contentToString(content: unknown): string {
   if (typeof content === 'string') return content;
   if (content && typeof content === 'object') {
-    // Legacy JSON (TipTap-like) — dump text nodes.
+    // Legacy JSON (TipTap-like) — dump text nodes
     const walk = (n: unknown): string => {
       if (typeof n === 'string') return n;
       if (!n || typeof n !== 'object') return '';
@@ -34,6 +35,36 @@ function contentToString(content: unknown): string {
   return '';
 }
 
+// Detect: nếu chuỗi bắt đầu bằng tag HTML phổ biến → xử lý như HTML
+function looksLikeHtml(s: string): boolean {
+  return /<(p|h[1-6]|ul|ol|blockquote|strong|em|a|img|br|div)[\s>/]/i.test(s.trim().slice(0, 200));
+}
+
+const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: [
+    'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'ul', 'ol', 'li',
+    'blockquote', 'br', 'hr',
+    'strong', 'em', 'b', 'i', 'u', 's',
+    'a', 'img',
+    'code', 'pre',
+    'span', 'div',
+  ],
+  allowedAttributes: {
+    a: ['href', 'name', 'target', 'rel'],
+    img: ['src', 'alt', 'title', 'width', 'height'],
+    span: ['class'],
+    div: ['class'],
+  },
+  allowedSchemes: ['http', 'https', 'mailto', 'tel', 'data'],
+  transformTags: {
+    a: (tagName, attribs) => ({
+      tagName,
+      attribs: { ...attribs, target: '_blank', rel: 'noopener noreferrer' },
+    }),
+  },
+};
+
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
@@ -41,6 +72,8 @@ export default async function BlogPostPage({ params }: Props) {
   if (!post || post.status !== 'PUBLISHED') notFound();
 
   const body = contentToString(post.content);
+  const isHtml = looksLikeHtml(body);
+  const cleanHtml = isHtml ? sanitizeHtml(body, SANITIZE_OPTIONS) : '';
 
   return (
     <div className='py-12'>
@@ -84,7 +117,11 @@ export default async function BlogPostPage({ params }: Props) {
           )}
 
           <div className='mt-8 md-content'>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{body}</ReactMarkdown>
+            {isHtml ? (
+              <div dangerouslySetInnerHTML={{ __html: cleanHtml }} />
+            ) : (
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{body}</ReactMarkdown>
+            )}
           </div>
         </article>
       </div>

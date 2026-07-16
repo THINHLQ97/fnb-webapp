@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
+import { marked } from 'marked';
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { RichEditor } from '@/components/ui/rich-editor';
+import { ImageInput } from '@/components/ui/image-input';
 import { createPost, updatePost } from '../api/service';
 
 type Post = {
@@ -37,11 +40,27 @@ type Props = {
   onSuccess: () => void;
 };
 
-function contentToString(content: unknown): string {
-  if (typeof content === 'string') return content;
-  if (content && typeof content === 'object') {
+// Detect HTML: nội dung có tag < ở đầu hoặc chứa các tag phổ biến
+function looksLikeHtml(s: string): boolean {
+  return /<(p|h1|h2|h3|ul|ol|blockquote|strong|em|a|img|br)[\s>]/i.test(s.trim().slice(0, 200));
+}
+
+function normalizeContent(raw: unknown): string {
+  if (typeof raw === 'string') {
+    if (!raw.trim()) return '';
+    if (looksLikeHtml(raw)) return raw;
+    // Markdown legacy → convert sang HTML để nạp vào RichEditor
     try {
-      return JSON.stringify(content, null, 2);
+      const html = marked.parse(raw, { async: false }) as string;
+      return html;
+    } catch {
+      return `<p>${raw}</p>`;
+    }
+  }
+  if (raw && typeof raw === 'object') {
+    // Legacy TipTap-like JSON hoặc bất kỳ — dump ra text
+    try {
+      return JSON.stringify(raw);
     } catch {
       return '';
     }
@@ -66,7 +85,7 @@ export function PostFormDialog({ open, onOpenChange, post, onSuccess }: Props) {
       setSlug(post.slug);
       setExcerpt(post.excerpt ?? '');
       setCoverImage(post.coverImage ?? '');
-      setContent(contentToString(post.content));
+      setContent(normalizeContent(post.content));
       setStatus(post.status);
     } else {
       setTitle('');
@@ -82,6 +101,10 @@ export function PostFormDialog({ open, onOpenChange, post, onSuccess }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!content.trim()) {
+      setError('Nội dung không được để trống.');
+      return;
+    }
     startTransition(async () => {
       try {
         const payload = {
@@ -106,7 +129,7 @@ export function PostFormDialog({ open, onOpenChange, post, onSuccess }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='sm:max-w-2xl max-h-[90vh] overflow-y-auto'>
+      <DialogContent className='sm:max-w-3xl max-h-[90vh] overflow-y-auto'>
         <DialogHeader>
           <DialogTitle>{post ? 'Sửa bài viết' : 'Thêm bài viết'}</DialogTitle>
         </DialogHeader>
@@ -144,30 +167,23 @@ export function PostFormDialog({ open, onOpenChange, post, onSuccess }: Props) {
             />
           </div>
 
-          <div className='space-y-2'>
-            <Label htmlFor='coverImage'>Ảnh bìa (URL)</Label>
-            <Input
-              id='coverImage'
-              value={coverImage}
-              onChange={(e) => setCoverImage(e.target.value)}
-              type='url'
-              placeholder='https://...'
-            />
-          </div>
+          <ImageInput
+            value={coverImage}
+            onChange={setCoverImage}
+            label='Ảnh bìa'
+            helperText='Ảnh hiển thị lớn ở đầu bài viết và trong trang blog list. Tối đa 500 KB.'
+          />
 
           <div className='space-y-2'>
-            <Label htmlFor='content'>Nội dung *</Label>
-            <Textarea
-              id='content'
+            <Label>Nội dung *</Label>
+            <RichEditor
               value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={12}
-              required
-              placeholder='Nội dung bài viết. Cách nhau bằng dòng trống để tạo đoạn văn mới.'
+              onChange={setContent}
+              placeholder='Bắt đầu viết bài. Dùng thanh công cụ ở trên để định dạng...'
             />
             <p className='text-xs text-muted-foreground'>
-              Hỗ trợ Markdown: <code>## Tiêu đề</code>, <code>**đậm**</code>, <code>*nghiêng*</code>,{' '}
-              <code>- danh sách</code>, <code>[link](url)</code>. Đoạn văn cách nhau bằng 1 dòng trống.
+              Thanh công cụ: <strong>B</strong> đậm · <strong>I</strong> nghiêng · H2/H3 tiêu đề ·
+              danh sách · trích dẫn · link · ảnh · undo/redo.
             </p>
           </div>
 

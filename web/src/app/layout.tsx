@@ -3,17 +3,42 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from 'next-themes';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
+import { SITE_URL, SITE_NAME } from '@/lib/site-url';
 import './globals.css';
 
 const fontSans = Geist({ variable: '--font-sans', subsets: ['latin'] });
 const fontMono = Geist_Mono({ variable: '--font-mono', subsets: ['latin'] });
 
+const DEFAULT_TITLE = 'F&B Store — Thức uống ngon mỗi ngày';
+const DEFAULT_DESC = 'Khám phá menu thức uống phong phú và đặt hàng dễ dàng.';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: 'F&B Store — Thức uống ngon mỗi ngày',
-    template: '%s | F&B Store',
+    default: DEFAULT_TITLE,
+    template: `%s | ${SITE_NAME}`,
   },
-  description: 'Khám phá menu thức uống phong phú và đặt hàng dễ dàng.',
+  description: DEFAULT_DESC,
+  openGraph: {
+    type: 'website',
+    locale: 'vi_VN',
+    siteName: SITE_NAME,
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESC,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESC,
+  },
+  alternates: {
+    canonical: SITE_URL,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

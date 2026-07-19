@@ -10,6 +10,8 @@ FROM node:${NODE_VERSION} AS builder
 WORKDIR /app
 RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY --from=dependencies /app/node_modules ./node_modules
+# Shared prisma schema — cả admin + web đều tham chiếu ../prisma/schema.prisma
+COPY prisma/ /prisma/
 COPY web/ .
 RUN mkdir -p public
 

@@ -140,13 +140,14 @@ model Attendance {
 }
 
 // ----- Cấu hình website (hero, contact, giờ mở cửa) -----
+// Key-value, value là JSON để linh hoạt. Admin sửa qua UI, web đọc runtime.
 model SiteSetting {
   key       String   @id
   value     Json
   updatedAt DateTime @updatedAt
 }
 
-// ----- Tin nhắn liên hệ từ khách -----
+// ----- Tin nhắn liên hệ từ khách (form /contact trên website) -----
 model ContactMessage {
   id        String   @id @default(cuid())
   name      String
@@ -154,21 +155,23 @@ model ContactMessage {
   phone     String?
   message   String   @db.Text
   read      Boolean  @default(false)
-  note      String?
+  note      String? // ghi chú nội bộ khi xử lý
   createdAt DateTime @default(now())
 
   @@index([read, createdAt])
 }
 
 // ----- Menu overlay: đè metadata lên sản phẩm KiotViet -----
+// KiotViet là nguồn sự thật cho tên/giá; đây chỉ thêm tag, ảnh custom,
+// đánh dấu highlight/featured để marketing.
 model MenuItemOverride {
   id          String   @id @default(cuid())
   kiotvietId  Int      @unique
-  highlight   Boolean  @default(false)
-  featured    Boolean  @default(false)
+  highlight   Boolean  @default(false) // hiển thị badge "Best seller"
+  featured    Boolean  @default(false) // ghim lên đầu danh sách menu
   customImage String?
-  tag         String?
-  note        String?
+  tag         String? // "MỚI", "GIẢM 20%", "HOT"...
+  note        String? // ghi chú nội bộ cho quản lý
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

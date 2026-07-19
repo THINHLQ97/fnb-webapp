@@ -6,6 +6,7 @@ node_modules/
 next-env.d.ts
 .turbo/
 dist/
+.commit-msg.tmp
 
 # Reference templates (not part of project)
 web-bitespace-ref/

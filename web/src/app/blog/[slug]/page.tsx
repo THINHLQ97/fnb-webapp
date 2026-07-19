@@ -15,7 +15,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
   if (!post) return { title: 'Không tìm thấy bài viết' };
-  return { title: post.title, description: post.excerpt ?? undefined };
+
+  const description = post.excerpt ?? undefined;
+  const images = post.coverImage ? [{ url: post.coverImage }] : undefined;
+
+  return {
+    title: post.title,
+    description,
+    openGraph: {
+      type: 'article',
+      title: post.title,
+      description,
+      images,
+      publishedTime: post.publishedAt?.toISOString(),
+      authors: post.author.name ? [post.author.name] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description,
+      images: post.coverImage ? [post.coverImage] : undefined,
+    },
+    alternates: { canonical: `/blog/${slug}` },
+  };
 }
 
 function contentToString(content: unknown): string {

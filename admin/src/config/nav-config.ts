@@ -54,6 +54,19 @@ export const navGroups: NavGroup[] = [
     ]
   },
   {
+    label: 'Kho & Công thức',
+    items: [
+      {
+        title: 'Kho hàng',
+        url: '/dashboard/kho-hang',
+        icon: 'product',
+        isActive: false,
+        shortcut: ['k', 'k'],
+        items: []
+      }
+    ]
+  },
+  {
     label: 'Nhân sự',
     items: [
       {

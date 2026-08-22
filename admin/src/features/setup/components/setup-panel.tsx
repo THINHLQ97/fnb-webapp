@@ -9,6 +9,7 @@ import {
   seedSamplePosts,
   type SetupStatus,
 } from '../api/service';
+import { seedInventorySample } from '../api/seed-inventory';
 
 type StepResult = { ok: boolean; message: string } | null;
 
@@ -17,6 +18,7 @@ export function SetupPanel({ initialStatus }: { initialStatus: SetupStatus }) {
   const [migrationResult, setMigrationResult] = useState<StepResult>(null);
   const [promoteResult, setPromoteResult] = useState<StepResult>(null);
   const [seedResult, setSeedResult] = useState<StepResult>(null);
+  const [invResult, setInvResult] = useState<StepResult>(null);
   const [isPending, startTransition] = useTransition();
 
   function refetchStatus() {
@@ -55,6 +57,14 @@ export function SetupPanel({ initialStatus }: { initialStatus: SetupStatus }) {
       const r = await seedSamplePosts();
       setSeedResult(r);
       if (r.ok) refetchStatus();
+    });
+  }
+
+  function doSeedInventory() {
+    setInvResult(null);
+    startTransition(async () => {
+      const r = await seedInventorySample();
+      setInvResult(r);
     });
   }
 
@@ -157,6 +167,18 @@ export function SetupPanel({ initialStatus }: { initialStatus: SetupStatus }) {
         disabled={isPending || !user}
         done={postCount >= 3}
         result={seedResult}
+      />
+
+      {/* Step 4: Seed inventory sample */}
+      <SetupStep
+        num={4}
+        title='Thêm dữ liệu KHO mẫu (nguyên liệu + nền + món)'
+        description='Insert 30 nguyên liệu + 4 nền pha chế + 8 món demo với giá vốn ước lượng. Sau đó bạn vào /dashboard/kho-hang chỉnh giá vốn và tồn kho thật.'
+        buttonLabel='Thêm dữ liệu mẫu'
+        onClick={doSeedInventory}
+        disabled={isPending || !user}
+        done={false}
+        result={invResult}
       />
 
       <div className='rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900'>

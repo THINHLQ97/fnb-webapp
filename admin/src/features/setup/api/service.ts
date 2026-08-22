@@ -40,6 +40,129 @@ const MIGRATION_SQL = [
     CONSTRAINT "ContactMessage_pkey" PRIMARY KEY ("id")
   );`,
   `CREATE INDEX IF NOT EXISTS "ContactMessage_read_createdAt_idx" ON "ContactMessage"("read", "createdAt");`,
+
+  // ------- Kho nguyên liệu + công thức + bán hàng --------
+  `DO $$ BEGIN
+    CREATE TYPE "IngredientCategory" AS ENUM ('TRA','DUONG','SUA','TOPPING','TRAI_CAY','SYRUP','CACAO','CA_PHE','BANH','PHU_LIEU','BAO_BI','KHAC');
+  EXCEPTION WHEN duplicate_object THEN null; END $$;`,
+  `DO $$ BEGIN
+    CREATE TYPE "StockReason" AS ENUM ('PURCHASE','CONSUME','WASTE','ADJUST','BASE_PREP');
+  EXCEPTION WHEN duplicate_object THEN null; END $$;`,
+
+  `CREATE TABLE IF NOT EXISTS "Ingredient" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "category" "IngredientCategory" NOT NULL DEFAULT 'KHAC',
+    "unit" TEXT NOT NULL,
+    "stock" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "alertLevel" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "costPerUnit" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "packagingNote" TEXT,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "Ingredient_pkey" PRIMARY KEY ("id")
+  );`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "Ingredient_name_key" ON "Ingredient"("name");`,
+  `CREATE INDEX IF NOT EXISTS "Ingredient_category_active_idx" ON "Ingredient"("category","active");`,
+
+  `CREATE TABLE IF NOT EXISTS "BasePrep" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "yieldQty" DOUBLE PRECISION NOT NULL,
+    "yieldUnit" TEXT NOT NULL,
+    "notes" TEXT,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "BasePrep_pkey" PRIMARY KEY ("id")
+  );`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "BasePrep_name_key" ON "BasePrep"("name");`,
+  `CREATE INDEX IF NOT EXISTS "BasePrep_active_idx" ON "BasePrep"("active");`,
+
+  `CREATE TABLE IF NOT EXISTS "BasePrepItem" (
+    "id" TEXT NOT NULL,
+    "basePrepId" TEXT NOT NULL,
+    "ingredientId" TEXT NOT NULL,
+    "quantity" DOUBLE PRECISION NOT NULL,
+    CONSTRAINT "BasePrepItem_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "BasePrepItem_basePrepId_fkey" FOREIGN KEY ("basePrepId") REFERENCES "BasePrep"("id") ON DELETE CASCADE,
+    CONSTRAINT "BasePrepItem_ingredientId_fkey" FOREIGN KEY ("ingredientId") REFERENCES "Ingredient"("id")
+  );`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "BasePrepItem_basePrepId_ingredientId_key" ON "BasePrepItem"("basePrepId","ingredientId");`,
+
+  `CREATE TABLE IF NOT EXISTS "DrinkRecipe" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "category" TEXT,
+    "priceRegular" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "priceLarge" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "sizeLargeFactor" DOUBLE PRECISION NOT NULL DEFAULT 1.5,
+    "kiotvietProductId" INTEGER,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "DrinkRecipe_pkey" PRIMARY KEY ("id")
+  );`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "DrinkRecipe_name_key" ON "DrinkRecipe"("name");`,
+  `CREATE INDEX IF NOT EXISTS "DrinkRecipe_active_category_idx" ON "DrinkRecipe"("active","category");`,
+
+  `CREATE TABLE IF NOT EXISTS "RecipeItem" (
+    "id" TEXT NOT NULL,
+    "recipeId" TEXT NOT NULL,
+    "ingredientId" TEXT,
+    "basePrepId" TEXT,
+    "quantity" DOUBLE PRECISION NOT NULL,
+    "note" TEXT,
+    CONSTRAINT "RecipeItem_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "RecipeItem_recipeId_fkey" FOREIGN KEY ("recipeId") REFERENCES "DrinkRecipe"("id") ON DELETE CASCADE,
+    CONSTRAINT "RecipeItem_ingredientId_fkey" FOREIGN KEY ("ingredientId") REFERENCES "Ingredient"("id"),
+    CONSTRAINT "RecipeItem_basePrepId_fkey" FOREIGN KEY ("basePrepId") REFERENCES "BasePrep"("id")
+  );`,
+  `CREATE INDEX IF NOT EXISTS "RecipeItem_recipeId_idx" ON "RecipeItem"("recipeId");`,
+
+  `CREATE TABLE IF NOT EXISTS "DailySale" (
+    "id" TEXT NOT NULL,
+    "date" DATE NOT NULL,
+    "recipeId" TEXT NOT NULL,
+    "countRegular" INTEGER NOT NULL DEFAULT 0,
+    "countLarge" INTEGER NOT NULL DEFAULT 0,
+    "countPromo" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "DailySale_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "DailySale_recipeId_fkey" FOREIGN KEY ("recipeId") REFERENCES "DrinkRecipe"("id")
+  );`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "DailySale_date_recipeId_key" ON "DailySale"("date","recipeId");`,
+  `CREATE INDEX IF NOT EXISTS "DailySale_date_idx" ON "DailySale"("date");`,
+
+  `CREATE TABLE IF NOT EXISTS "StockMovement" (
+    "id" TEXT NOT NULL,
+    "ingredientId" TEXT NOT NULL,
+    "delta" DOUBLE PRECISION NOT NULL,
+    "reason" "StockReason" NOT NULL,
+    "refDate" DATE NOT NULL,
+    "cost" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "note" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "StockMovement_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "StockMovement_ingredientId_fkey" FOREIGN KEY ("ingredientId") REFERENCES "Ingredient"("id")
+  );`,
+  `CREATE INDEX IF NOT EXISTS "StockMovement_refDate_idx" ON "StockMovement"("refDate");`,
+  `CREATE INDEX IF NOT EXISTS "StockMovement_ingredientId_refDate_idx" ON "StockMovement"("ingredientId","refDate");`,
+
+  `CREATE TABLE IF NOT EXISTS "DailyClose" (
+    "id" TEXT NOT NULL,
+    "date" DATE NOT NULL,
+    "totalRevenue" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "totalCost" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "netProfit" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "itemsSold" INTEGER NOT NULL DEFAULT 0,
+    "closedBy" TEXT,
+    "closedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "DailyClose_pkey" PRIMARY KEY ("id")
+  );`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "DailyClose_date_key" ON "DailyClose"("date");`,
 ];
 
 const SAMPLE_POSTS = [

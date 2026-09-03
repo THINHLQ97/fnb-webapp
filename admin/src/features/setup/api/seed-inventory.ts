@@ -3,9 +3,13 @@
 import { prisma } from '@/lib/prisma';
 
 /**
- * Seed dữ liệu MẪU cho kho + công thức để demo luồng chốt ngày.
- * Giá vốn dùng số ước lượng (chưa phải giá thật của quán).
- * Chủ quán sau đó vào /dashboard/kho-hang chỉnh lại từng dòng.
+ * Seed dữ liệu KHO + công thức. Giá vốn lấy từ HĐ thật (WAO, Mokafi,
+ * Thanh Bạch, Phương Linh) — ô nào không có HĐ thì ước theo thị trường
+ * VN 2026, xem file `Công thức Hí Hế - CẦN ĐIỀN v3-FULL-by-claude.xlsx`
+ * để đối chiếu và chỉnh giá vốn thật.
+ *
+ * Re-run an toàn: upsert giữ nguyên stock/alertLevel của bạn, chỉ cập
+ * nhật costPerUnit + packagingNote.
  */
 
 type IngSeed = {
@@ -19,45 +23,57 @@ type IngSeed = {
 };
 
 const INGREDIENTS: IngSeed[] = [
-  { name: 'Trà đen', category: 'TRA', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 400, packagingNote: '1kg = 400.000đ (giá mẫu)' },
-  { name: 'Trà lài Wao', category: 'TRA', unit: 'g', stock: 1000, alertLevel: 100, costPerUnit: 500 },
-  { name: 'Trà Ô Long', category: 'TRA', unit: 'g', stock: 1500, alertLevel: 150, costPerUnit: 600 },
-  { name: 'Trà nguyên lá', category: 'TRA', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 700 },
-  { name: 'Bông cúc khô', category: 'TRA', unit: 'g', stock: 500, alertLevel: 50, costPerUnit: 800 },
+  // TRÀ (HĐ WAO 20/07/2026)
+  { name: 'Trà đen', category: 'TRA', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 235.44, packagingNote: 'WAO Hồng Trà Thượng Hạng — 235.440đ/kg' },
+  { name: 'Trà lài Wao', category: 'TRA', unit: 'g', stock: 1000, alertLevel: 100, costPerUnit: 207.36, packagingNote: 'WAO Trà Xanh Lài — 207.360đ/kg' },
+  { name: 'Trà Ô Long', category: 'TRA', unit: 'g', stock: 1500, alertLevel: 150, costPerUnit: 301.32, packagingNote: 'WAO Olong Rạng — 301.320đ/kg' },
+  { name: 'Trà nguyên lá', category: 'TRA', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 196.56, packagingNote: 'WAO Trà Đen Nguyên Lá — 196.560đ/kg' },
+  { name: 'Bông cúc khô', category: 'TRA', unit: 'g', stock: 500, alertLevel: 50, costPerUnit: 250, packagingNote: '250.000đ/kg' },
 
-  { name: 'Đường vàng', category: 'DUONG', unit: 'g', stock: 20000, alertLevel: 2000, costPerUnit: 25 },
-  { name: 'Đường cát trắng', category: 'DUONG', unit: 'g', stock: 5000, alertLevel: 500, costPerUnit: 22 },
+  // ĐƯỜNG
+  { name: 'Đường vàng', category: 'DUONG', unit: 'g', stock: 20000, alertLevel: 2000, costPerUnit: 22.20, packagingNote: 'Đường mía Thanh Bạch — 1.110.000đ/bao 50kg' },
+  { name: 'Đường cát trắng', category: 'DUONG', unit: 'g', stock: 5000, alertLevel: 500, costPerUnit: 19.17, packagingNote: '230.000đ/cây 12kg' },
 
-  { name: 'Sữa đặc Ông Thọ', category: 'SUA', unit: 'g', stock: 3800, alertLevel: 380, costPerUnit: 60, packagingNote: '1 lon 380g ~ 23.000đ' },
-  { name: 'Sữa tươi', category: 'SUA', unit: 'ml', stock: 5000, alertLevel: 500, costPerUnit: 35 },
-  { name: 'Bột sữa', category: 'SUA', unit: 'g', stock: 3000, alertLevel: 300, costPerUnit: 150 },
-  { name: 'Whipping cream', category: 'SUA', unit: 'ml', stock: 1000, alertLevel: 250, costPerUnit: 120 },
+  // SỮA (Ngôi Sao thay Ông Thọ theo user)
+  { name: 'Sữa đặc Ông Thọ', category: 'SUA', unit: 'g', stock: 3800, alertLevel: 380, costPerUnit: 41.39, packagingNote: 'Ngôi Sao — 755.000đ/thùng, ƯỚC 48 lon 380g' },
+  { name: 'Sữa tươi', category: 'SUA', unit: 'ml', stock: 5000, alertLevel: 500, costPerUnit: 29.17, packagingNote: 'Happy Barn Tím — 350.000đ/thùng 12 hộp 1L' },
+  { name: 'Bột sữa', category: 'SUA', unit: 'g', stock: 3000, alertLevel: 300, costPerUnit: 83.60, packagingNote: 'Frima — 2.090.000đ/bao 25kg' },
+  { name: 'Whipping cream', category: 'SUA', unit: 'ml', stock: 1000, alertLevel: 250, costPerUnit: 148, packagingNote: 'Anchor — 148.000đ/hộp 1L' },
 
-  { name: 'Trân châu đen (khô)', category: 'TOPPING', unit: 'g', stock: 5000, alertLevel: 500, costPerUnit: 100, packagingNote: '1kg khô nấu ra ~15-17 ly' },
-  { name: 'Hạt đác (bịch)', category: 'TOPPING', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 80 },
+  // TOPPING
+  { name: 'Trân châu đen (khô)', category: 'TOPPING', unit: 'g', stock: 5000, alertLevel: 500, costPerUnit: 30.33, packagingNote: 'DOU XIAN — 546.000đ/thùng 18kg (6 gói 3kg). 1kg khô ~15 ly' },
+  { name: 'Hạt đác (bịch)', category: 'TOPPING', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 70, packagingNote: 'ƯỚC 70.000đ/bịch 1kg' },
 
-  { name: 'Cà phê hạt', category: 'CA_PHE', unit: 'g', stock: 3000, alertLevel: 300, costPerUnit: 400 },
+  // CÀ PHÊ + CACAO
+  { name: 'Cà phê hạt', category: 'CA_PHE', unit: 'g', stock: 3000, alertLevel: 300, costPerUnit: 230, packagingNote: 'Mokafi Silver — 230.000đ/kg' },
 
-  { name: 'Bột cacao', category: 'CACAO', unit: 'g', stock: 500, alertLevel: 50, costPerUnit: 300 },
-  { name: 'Milo bột', category: 'CACAO', unit: 'g', stock: 500, alertLevel: 50, costPerUnit: 250 },
+  { name: 'Bột cacao', category: 'CACAO', unit: 'g', stock: 500, alertLevel: 50, costPerUnit: 240, packagingNote: '2.400.000đ/bao 10kg' },
+  { name: 'Milo bột', category: 'CACAO', unit: 'g', stock: 500, alertLevel: 50, costPerUnit: 200, packagingNote: 'ƯỚC 200.000đ/kg' },
 
-  { name: 'Syrup Cam', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 200, packagingNote: '1 chai 750ml ~ 150.000đ' },
-  { name: 'Syrup Đào', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 200 },
-  { name: 'Syrup Xí Muội', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 200 },
-  { name: 'Syrup Hazelnut', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 220 },
-  { name: 'Syrup Caramel', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 200 },
-  { name: 'Syrup Vải (lychee)', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 220 },
-  { name: 'Syrup Cookie', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 220 },
-  { name: 'Syrup Xoài', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 200 },
-  { name: 'Syrup Ổi', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 200 },
+  // SYRUP
+  { name: 'Syrup Cam', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 142.67, packagingNote: 'Sun Up — 107.000đ/chai 750ml' },
+  { name: 'Syrup Đào', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 98, packagingNote: 'Osterberg Sinh Tố — 98.000đ/chai 1L' },
+  { name: 'Syrup Xí Muội', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 100, packagingNote: 'ƯỚC tự ngâm — 100đ/ml' },
+  { name: 'Syrup Hazelnut', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 253.33, packagingNote: 'ƯỚC Davinci — 190.000đ/chai 750ml' },
+  { name: 'Syrup Caramel', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 245.33, packagingNote: 'Davinci — 184.000đ/chai 750ml' },
+  { name: 'Syrup Vải (lychee)', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 186.67, packagingNote: 'ƯỚC 140.000đ/chai 750ml' },
+  { name: 'Syrup Cookie', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 245.33, packagingNote: 'Davinci — 184.000đ/chai 750ml' },
+  { name: 'Syrup Xoài', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 142.67, packagingNote: 'Sun Up — 107.000đ/chai 750ml' },
+  { name: 'Syrup Ổi', category: 'SYRUP', unit: 'ml', stock: 750, alertLevel: 100, costPerUnit: 173.33, packagingNote: 'ƯỚC 130.000đ/chai 750ml' },
 
-  { name: 'Vải tươi (cùi)', category: 'TRAI_CAY', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 150 },
-  { name: 'Chôm chôm (cùi)', category: 'TRAI_CAY', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 120 },
-  { name: 'Cam sành', category: 'TRAI_CAY', unit: 'g', stock: 3000, alertLevel: 300, costPerUnit: 40 },
-  { name: 'Tắc', category: 'TRAI_CAY', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 60 },
+  // TRÁI CÂY (giá tính trên phần ăn được, đã trừ yield)
+  { name: 'Vải tươi (cùi)', category: 'TRAI_CAY', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 91, packagingNote: 'ƯỚC 50k/kg, yield 55% (bỏ vỏ hạt)' },
+  { name: 'Chôm chôm (cùi)', category: 'TRAI_CAY', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 73, packagingNote: 'ƯỚC 40k/kg, yield 55%' },
+  { name: 'Cam sành', category: 'TRAI_CAY', unit: 'g', stock: 3000, alertLevel: 300, costPerUnit: 30, packagingNote: 'ƯỚC 30.000đ/kg' },
+  { name: 'Tắc', category: 'TRAI_CAY', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 30, packagingNote: 'ƯỚC 30.000đ/kg' },
 
-  { name: 'Ly nhựa M + nắp + ống hút', category: 'BAO_BI', unit: 'cái', stock: 500, alertLevel: 100, costPerUnit: 1800 },
-  { name: 'Ly nhựa L + nắp + ống hút', category: 'BAO_BI', unit: 'cái', stock: 300, alertLevel: 80, costPerUnit: 2500 },
+  // PHỤ LIỆU
+  { name: 'Gelatin', category: 'PHU_LIEU', unit: 'g', stock: 1000, alertLevel: 100, costPerUnit: 280, packagingNote: 'Ewald — 280.000đ/gói 1kg' },
+  { name: 'Muối', category: 'PHU_LIEU', unit: 'g', stock: 1000, alertLevel: 100, costPerUnit: 10, packagingNote: 'ƯỚC 10.000đ/kg' },
+
+  // BAO BÌ
+  { name: 'Ly nhựa M + nắp + ống hút', category: 'BAO_BI', unit: 'cái', stock: 500, alertLevel: 100, costPerUnit: 1820, packagingNote: 'Ly M 1.320đ + nắp 300đ + ống to 200đ' },
+  { name: 'Ly nhựa L + nắp + ống hút', category: 'BAO_BI', unit: 'cái', stock: 300, alertLevel: 80, costPerUnit: 2150, packagingNote: 'Ly L 1.600đ + nắp 350đ + ống to 200đ (ƯỚC)' },
 ];
 
 type BaseSeed = {
@@ -224,13 +240,19 @@ export type SeedResult = { ok: boolean; message: string };
 
 export async function seedInventorySample(): Promise<SeedResult> {
   try {
-    // Ingredients
+    // Ingredients — chỉ cập nhật costPerUnit + packagingNote khi re-run,
+    // GIỮ NGUYÊN stock và alertLevel của user
     const ingMap = new Map<string, string>();
     for (const ing of INGREDIENTS) {
       const rec = await prisma.ingredient.upsert({
         where: { name: ing.name },
         create: ing,
-        update: {}, // giữ nguyên nếu đã tồn tại (không đè stock/giá của user)
+        update: {
+          costPerUnit: ing.costPerUnit,
+          packagingNote: ing.packagingNote ?? null,
+          category: ing.category,
+          unit: ing.unit,
+        },
       });
       ingMap.set(ing.name, rec.id);
     }

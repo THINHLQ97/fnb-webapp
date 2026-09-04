@@ -1,0 +1,338 @@
+// Prisma schema — CHỈ chứa dữ liệu KiotViet KHÔNG quản lý:
+//   bài viết (CMS), nhân sự, chấm công, lịch trực, tài khoản & phân quyền.
+// Doanh số / tồn kho / đơn hàng KHÔNG lưu ở đây — luôn đọc trực tiếp từ KiotViet.
+//
+// Chạy:  npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----- Tài khoản & phân quyền (RBAC) -----
+enum Role {
+  ADMIN // chủ / quản lý: toàn quyền
+  EDITOR // biên tập viên: chỉ quản lý bài viết
+  MANAGER // quản lý ca: chấm công, xếp lịch
+  STAFF // nhân viên: xem lịch của mình, check-in/out
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  image         String?
+  emailVerified DateTime?
+  role          Role      @default(STAFF)
+  accounts      Account[]
+  employee      Employee?
+  posts         Post[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// Auth.js — liên kết OAuth (Google, v.v.)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+// ----- CMS bài viết (yêu cầu: admin biên tập & chỉnh sửa bài) -----
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model Post {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  title       String
+  excerpt     String?
+  content     Json // lưu rich-text (TipTap/Lexical) dạng JSON
+  coverImage  String?
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  author      User       @relation(fields: [authorId], references: [id])
+  authorId    String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([status, publishedAt])
+}
+
+// ----- Nhân sự (database nhân viên, phân công) -----
+model Department {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  employees Employee[]
+}
+
+model Employee {
+  id           String            @id @default(cuid())
+  code         String            @unique
+  fullName     String
+  phone        String?
+  position     String?
+  department   Department?       @relation(fields: [departmentId], references: [id])
+  departmentId String?
+  user         User?             @relation(fields: [userId], references: [id])
+  userId       String?           @unique
+  active       Boolean           @default(true)
+  hiredAt      DateTime?
+  shifts       ShiftAssignment[]
+  attendances  Attendance[]
+  createdAt    DateTime          @default(now())
+}
+
+// ----- Lịch trực / ca làm -----
+model Shift {
+  id          String            @id @default(cuid())
+  name        String
+  startTime   String
+  endTime     String
+  assignments ShiftAssignment[]
+}
+
+model ShiftAssignment {
+  id         String   @id @default(cuid())
+  shift      Shift    @relation(fields: [shiftId], references: [id])
+  shiftId    String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  employeeId String
+  date       DateTime
+  note       String?
+
+  @@unique([employeeId, date, shiftId])
+  @@index([date])
+}
+
+// ----- Chấm công -----
+model Attendance {
+  id         String    @id @default(cuid())
+  employee   Employee  @relation(fields: [employeeId], references: [id])
+  employeeId String
+  date       DateTime
+  checkIn    DateTime?
+  checkOut   DateTime?
+  source     String    @default("web")
+  note       String?
+
+  @@unique([employeeId, date])
+  @@index([date])
+}
+
+// ----- Cấu hình website (hero, contact, giờ mở cửa) -----
+// Key-value, value là JSON để linh hoạt. Admin sửa qua UI, web đọc runtime.
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+// ----- Tin nhắn liên hệ từ khách (form /contact trên website) -----
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  message   String   @db.Text
+  read      Boolean  @default(false)
+  note      String? // ghi chú nội bộ khi xử lý
+  createdAt DateTime @default(now())
+
+  @@index([read, createdAt])
+}
+
+// ----- Menu overlay: đè metadata lên sản phẩm KiotViet -----
+// KiotViet là nguồn sự thật cho tên/giá; đây chỉ thêm tag, ảnh custom,
+// đánh dấu highlight/featured để marketing.
+model MenuItemOverride {
+  id          String   @id @default(cuid())
+  kiotvietId  Int      @unique
+  highlight   Boolean  @default(false) // hiển thị badge "Best seller"
+  featured    Boolean  @default(false) // ghim lên đầu danh sách menu
+  customImage String?
+  tag         String? // "MỚI", "GIẢM 20%", "HOT"...
+  note        String? // ghi chú nội bộ cho quản lý
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([featured])
+  @@index([highlight])
+}
+
+// ============================================================
+// KHO NGUYÊN LIỆU + CÔNG THỨC + BÁN HÀNG THEO NGÀY
+// ============================================================
+// Luồng chính:
+//   1. Ingredient  = nguyên liệu thô (trà, đường, sữa, topping, bao bì…)
+//                    có tồn kho, giá vốn /đơn vị nhỏ nhất
+//   2. BasePrep    = mẻ pha chung (VD hồng trà 4.5L, trân châu 1kg khô)
+//                    input = ingredients, output = yield (dùng cho nhiều ly)
+//   3. DrinkRecipe = 1 món trên menu, gồm nhiều RecipeItem
+//                    mỗi item link vào Ingredient HOẶC BasePrep
+//   4. DailySale   = ngày X bán bao nhiêu ly món Y (size M/L/promo)
+//   5. Chốt ngày   = tính consumption, trừ Ingredient stock, log Movement
+//                    tính doanh thu + cost + lợi nhuận
+
+enum IngredientCategory {
+  TRA
+  DUONG
+  SUA
+  TOPPING
+  TRAI_CAY
+  SYRUP
+  CACAO
+  CA_PHE
+  BANH
+  PHU_LIEU
+  BAO_BI
+  KHAC
+}
+
+enum StockReason {
+  PURCHASE // nhập kho
+  CONSUME // trừ do bán
+  WASTE // hao hụt (đổ, hư)
+  ADJUST // chỉnh kiểm kê
+  BASE_PREP // trừ khi nấu mẻ nền
+}
+
+model Ingredient {
+  id             String              @id @default(cuid())
+  name           String              @unique
+  category       IngredientCategory  @default(KHAC)
+  unit           String // đơn vị nội bộ: g, ml, trái, cái, ống, giọt...
+  stock          Float               @default(0) // tồn hiện tại (đơn vị nội bộ)
+  alertLevel     Float               @default(0) // cảnh báo khi <=
+  costPerUnit    Float               @default(0) // đ / đơn vị nội bộ
+  packagingNote  String? // "1 lon 380g", "1 chai 750ml"…
+  active         Boolean             @default(true)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  basePrepItems  BasePrepItem[]
+  recipeItems    RecipeItem[]
+  movements      StockMovement[]
+
+  @@index([category, active])
+}
+
+model BasePrep {
+  id           String         @id @default(cuid())
+  name         String         @unique // "Hồng trà nền", "Trân châu đen"
+  yieldQty     Float // 1 mẻ ra bao nhiêu
+  yieldUnit    String // ml, g, ly...
+  notes        String?
+  active       Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  ingredients  BasePrepItem[]
+  recipeItems  RecipeItem[]
+
+  @@index([active])
+}
+
+model BasePrepItem {
+  id           String     @id @default(cuid())
+  basePrep     BasePrep   @relation(fields: [basePrepId], references: [id], onDelete: Cascade)
+  basePrepId   String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+  ingredientId String
+  quantity     Float // số lượng cho 1 mẻ, đơn vị = ingredient.unit
+
+  @@unique([basePrepId, ingredientId])
+}
+
+model DrinkRecipe {
+  id               String       @id @default(cuid())
+  name             String       @unique
+  category         String? // "Trà thuần", "Trà sữa", "Cà phê"…
+  priceRegular     Float        @default(0) // Size M
+  priceLarge       Float        @default(0) // Size L
+  sizeLargeFactor  Float        @default(1.5) // nguyên liệu size L = M x factor
+  kiotvietProductId Int? // để sau này wire với KiotViet
+  active           Boolean      @default(true)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  items            RecipeItem[]
+  sales            DailySale[]
+
+  @@index([active, category])
+}
+
+model RecipeItem {
+  id           String       @id @default(cuid())
+  recipe       DrinkRecipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId     String
+  // Một trong 2: link vào ingredient thô HOẶC base prep
+  ingredient   Ingredient?  @relation(fields: [ingredientId], references: [id])
+  ingredientId String?
+  basePrep     BasePrep?    @relation(fields: [basePrepId], references: [id])
+  basePrepId   String?
+  quantity     Float // cho size M, đơn vị = ingredient.unit hoặc basePrep.yieldUnit
+  note         String?
+
+  @@index([recipeId])
+}
+
+model DailySale {
+  id             String       @id @default(cuid())
+  date           DateTime     @db.Date
+  recipe         DrinkRecipe  @relation(fields: [recipeId], references: [id])
+  recipeId       String
+  countRegular   Int          @default(0)
+  countLarge     Int          @default(0)
+  countPromo     Int          @default(0) // ly khuyến mãi/nhân viên uống (không tính doanh thu, có tính cost)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([date, recipeId])
+  @@index([date])
+}
+
+model StockMovement {
+  id           String       @id @default(cuid())
+  ingredient   Ingredient   @relation(fields: [ingredientId], references: [id])
+  ingredientId String
+  delta        Float // + nhập, - xuất
+  reason       StockReason
+  refDate      DateTime     @db.Date
+  cost         Float        @default(0) // giá trị đợt nhập (nếu reason = PURCHASE)
+  note         String?
+  createdAt    DateTime     @default(now())
+
+  @@index([refDate])
+  @@index([ingredientId, refDate])
+}
+
+model DailyClose {
+  id            String   @id @default(cuid())
+  date          DateTime @unique @db.Date
+  totalRevenue  Float    @default(0)
+  totalCost     Float    @default(0)
+  netProfit     Float    @default(0)
+  itemsSold     Int      @default(0)
+  closedBy      String? // userId
+  closedAt      DateTime @default(now())
+}

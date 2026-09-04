@@ -48,13 +48,12 @@ RUN mkdir .next && chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Bootstrap: prisma CLI + schema để tự migrate DB lúc container start.
-# Cần thiết khi deploy lên nền tảng có DB Postgres mới trống (Tinhgon,
-# Vercel Postgres...). Với DB đã có bảng, "db push" là no-op.
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
+# Bootstrap: prisma CLI global + schema để tự migrate DB lúc container
+# start. Cần thiết khi deploy lên nền tảng có DB Postgres mới trống
+# (Tinhgon, Vercel Postgres...). Với DB đã có bảng, "db push" là no-op.
+RUN npm install -g prisma@6.19.3
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 USER nextjs
 EXPOSE 3000
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js db push --schema=./prisma/schema.prisma --skip-generate --accept-data-loss && node server.js"]
+CMD ["sh", "-c", "prisma db push --schema=./prisma/schema.prisma --skip-generate --accept-data-loss && node server.js"]

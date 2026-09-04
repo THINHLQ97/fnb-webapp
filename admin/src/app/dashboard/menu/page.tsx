@@ -1,22 +1,22 @@
 import PageContainer from '@/components/layout/page-container';
-import { MenuOverlayListing } from '@/features/menu-overlay/components/menu-overlay-listing';
-import { getMenuOverlay } from '@/features/menu-overlay/api/service';
+import { MenuDisplayListing } from '@/features/menu-display/components/menu-display-listing';
+import { getMenuDisplay } from '@/features/menu-display/api/service';
 
 export const metadata = {
-  title: 'Dashboard: Menu KiotViet',
+  title: 'Dashboard: Menu website',
 };
 
 export const dynamic = 'force-dynamic';
 
 export default async function MenuPage() {
-  const { items, error } = await getMenuOverlay();
+  const { items, error } = await getMenuDisplay();
 
   return (
     <PageContainer
-      pageTitle='Menu KiotViet'
-      pageDescription='Đè overlay lên sản phẩm KiotViet: đánh dấu Best seller, ghim đầu menu, ảnh custom, tag riêng.'
+      pageTitle='Menu website'
+      pageDescription='Trình bày món trên website: đánh dấu Best seller, ghim đầu menu, ảnh và mô tả.'
     >
-      <MenuOverlayListing initialItems={items} initialError={error} />
+      <MenuDisplayListing initialItems={items} initialError={error} />
     </PageContainer>
   );
 }

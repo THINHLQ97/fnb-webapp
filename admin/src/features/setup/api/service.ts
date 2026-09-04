@@ -11,23 +11,6 @@ const MIGRATION_SQL = [
     CONSTRAINT "SiteSetting_pkey" PRIMARY KEY ("key")
   );`,
 
-  `CREATE TABLE IF NOT EXISTS "MenuItemOverride" (
-    "id" TEXT NOT NULL,
-    "kiotvietId" INTEGER NOT NULL,
-    "highlight" BOOLEAN NOT NULL DEFAULT false,
-    "featured" BOOLEAN NOT NULL DEFAULT false,
-    "customImage" TEXT,
-    "tag" TEXT,
-    "note" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "MenuItemOverride_pkey" PRIMARY KEY ("id")
-  );`,
-
-  `CREATE UNIQUE INDEX IF NOT EXISTS "MenuItemOverride_kiotvietId_key" ON "MenuItemOverride"("kiotvietId");`,
-  `CREATE INDEX IF NOT EXISTS "MenuItemOverride_featured_idx" ON "MenuItemOverride"("featured");`,
-  `CREATE INDEX IF NOT EXISTS "MenuItemOverride_highlight_idx" ON "MenuItemOverride"("highlight");`,
-
   `CREATE TABLE IF NOT EXISTS "ContactMessage" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -98,7 +81,11 @@ const MIGRATION_SQL = [
     "priceRegular" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "priceLarge" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "sizeLargeFactor" DOUBLE PRECISION NOT NULL DEFAULT 1.5,
-    "kiotvietProductId" INTEGER,
+    "description" TEXT,
+    "image" TEXT,
+    "tag" TEXT,
+    "highlight" BOOLEAN NOT NULL DEFAULT false,
+    "featured" BOOLEAN NOT NULL DEFAULT false,
     "active" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -106,6 +93,14 @@ const MIGRATION_SQL = [
   );`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "DrinkRecipe_name_key" ON "DrinkRecipe"("name");`,
   `CREATE INDEX IF NOT EXISTS "DrinkRecipe_active_category_idx" ON "DrinkRecipe"("active","category");`,
+  // Nâng cấp bảng đã tạo từ bản trước (CREATE TABLE IF NOT EXISTS không thêm cột mới)
+  `ALTER TABLE "DrinkRecipe" ADD COLUMN IF NOT EXISTS "description" TEXT;`,
+  `ALTER TABLE "DrinkRecipe" ADD COLUMN IF NOT EXISTS "image" TEXT;`,
+  `ALTER TABLE "DrinkRecipe" ADD COLUMN IF NOT EXISTS "tag" TEXT;`,
+  `ALTER TABLE "DrinkRecipe" ADD COLUMN IF NOT EXISTS "highlight" BOOLEAN NOT NULL DEFAULT false;`,
+  `ALTER TABLE "DrinkRecipe" ADD COLUMN IF NOT EXISTS "featured" BOOLEAN NOT NULL DEFAULT false;`,
+  `CREATE INDEX IF NOT EXISTS "DrinkRecipe_featured_idx" ON "DrinkRecipe"("featured");`,
+  `CREATE INDEX IF NOT EXISTS "DrinkRecipe_highlight_idx" ON "DrinkRecipe"("highlight");`,
 
   `CREATE TABLE IF NOT EXISTS "RecipeItem" (
     "id" TEXT NOT NULL,

@@ -37,7 +37,7 @@ export default function SignInViewPage() {
         <div className='text-sidebar-foreground relative z-20 mt-auto'>
           <blockquote className='space-y-2'>
             <p className='text-lg'>
-              &ldquo;Hệ thống quản lý dành cho doanh nghiệp F&B, tích hợp KiotViet.&rdquo;
+              &ldquo;Hệ thống quản lý dành cho doanh nghiệp F&B.&rdquo;
             </p>
           </blockquote>
         </div>

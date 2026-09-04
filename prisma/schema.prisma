@@ -1,6 +1,6 @@
-// Prisma schema — CHỈ chứa dữ liệu KiotViet KHÔNG quản lý:
-//   bài viết (CMS), nhân sự, chấm công, lịch trực, tài khoản & phân quyền.
-// Doanh số / tồn kho / đơn hàng KHÔNG lưu ở đây — luôn đọc trực tiếp từ KiotViet.
+// Prisma schema — nguồn sự thật duy nhất của hệ thống:
+//   bài viết (CMS), nhân sự, chấm công, lịch trực, tài khoản & phân quyền,
+//   menu/công thức, kho nguyên liệu, doanh số theo ngày.
 //
 // Chạy:  npx prisma migrate dev --name init
 
@@ -161,24 +161,6 @@ model ContactMessage {
   @@index([read, createdAt])
 }
 
-// ----- Menu overlay: đè metadata lên sản phẩm KiotViet -----
-// KiotViet là nguồn sự thật cho tên/giá; đây chỉ thêm tag, ảnh custom,
-// đánh dấu highlight/featured để marketing.
-model MenuItemOverride {
-  id          String   @id @default(cuid())
-  kiotvietId  Int      @unique
-  highlight   Boolean  @default(false) // hiển thị badge "Best seller"
-  featured    Boolean  @default(false) // ghim lên đầu danh sách menu
-  customImage String?
-  tag         String? // "MỚI", "GIẢM 20%", "HOT"...
-  note        String? // ghi chú nội bộ cho quản lý
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([featured])
-  @@index([highlight])
-}
-
 // ============================================================
 // KHO NGUYÊN LIỆU + CÔNG THỨC + BÁN HÀNG THEO NGÀY
 // ============================================================
@@ -270,7 +252,11 @@ model DrinkRecipe {
   priceRegular     Float        @default(0) // Size M
   priceLarge       Float        @default(0) // Size L
   sizeLargeFactor  Float        @default(1.5) // nguyên liệu size L = M x factor
-  kiotvietProductId Int? // để sau này wire với KiotViet
+  description      String? // mô tả hiển thị trên menu website
+  image            String? // ảnh món (URL)
+  tag              String? // "MỚI", "GIẢM 20%", "HOT"…
+  highlight        Boolean      @default(false) // badge "Best seller"
+  featured         Boolean      @default(false) // ghim lên đầu menu
   active           Boolean      @default(true)
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
@@ -279,6 +265,8 @@ model DrinkRecipe {
   sales            DailySale[]
 
   @@index([active, category])
+  @@index([featured])
+  @@index([highlight])
 }
 
 model RecipeItem {

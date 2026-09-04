@@ -190,8 +190,8 @@ export function SetupPanel({ initialStatus }: { initialStatus: SetupStatus }) {
             / liên hệ / footer.
           </li>
           <li>
-            Vào <a href='/dashboard/menu' className='underline'>Menu KiotViet</a> để thêm tag / Best
-            seller cho sản phẩm.
+            Vào <a href='/dashboard/menu' className='underline'>Menu website</a> để thêm tag / Best
+            seller cho món.
           </li>
           <li>
             Kiểm tra kết quả trên{' '}

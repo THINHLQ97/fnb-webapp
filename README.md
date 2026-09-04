@@ -1,6 +1,7 @@
 # F&B WebApp — Next.js monorepo: admin dashboard + public website for Vietnamese F&B
 
-KiotViet là nguồn sự thật cho bán hàng / tồn kho. App tự quản lý: CMS, nhân sự, chấm công, RBAC.
+PostgreSQL là nguồn sự thật duy nhất. App tự quản lý: menu & công thức, kho nguyên liệu,
+doanh số theo ngày, CMS, nhân sự, chấm công, RBAC.
 
 ## Structure
 

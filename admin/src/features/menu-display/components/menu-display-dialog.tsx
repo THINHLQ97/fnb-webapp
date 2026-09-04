@@ -12,32 +12,32 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ImageInput } from '@/components/ui/image-input';
-import { saveOverride, clearOverride } from '../api/service';
-import type { MenuOverlayItem } from '../api/service';
+import { saveMenuDisplay, clearMenuDisplay } from '../api/service';
+import type { MenuDisplayItem } from '../api/service';
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  item: MenuOverlayItem | null;
-  onSuccess: (kiotvietId: number, override: MenuOverlayItem['override']) => void;
+  item: MenuDisplayItem | null;
+  onSuccess: (id: string, patch: Partial<MenuDisplayItem>) => void;
 };
 
-export function OverlayEditDialog({ open, onOpenChange, item, onSuccess }: Props) {
+export function MenuDisplayDialog({ open, onOpenChange, item, onSuccess }: Props) {
   const [isPending, startTransition] = useTransition();
   const [highlight, setHighlight] = useState(false);
   const [featured, setFeatured] = useState(false);
-  const [customImage, setCustomImage] = useState('');
+  const [image, setImage] = useState('');
   const [tag, setTag] = useState('');
-  const [note, setNote] = useState('');
+  const [description, setDescription] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (item) {
-      setHighlight(item.override.highlight);
-      setFeatured(item.override.featured);
-      setCustomImage(item.override.customImage ?? '');
-      setTag(item.override.tag ?? '');
-      setNote(item.override.note ?? '');
+      setHighlight(item.highlight);
+      setFeatured(item.featured);
+      setImage(item.image ?? '');
+      setTag(item.tag ?? '');
+      setDescription(item.description ?? '');
     }
     setError(null);
   }, [item, open]);
@@ -48,20 +48,19 @@ export function OverlayEditDialog({ open, onOpenChange, item, onSuccess }: Props
     setError(null);
     startTransition(async () => {
       try {
-        await saveOverride(item.kiotvietId, {
+        await saveMenuDisplay(item.id, {
           highlight,
           featured,
-          customImage: customImage.trim() || undefined,
+          image: image.trim() || undefined,
           tag: tag.trim() || undefined,
-          note: note.trim() || undefined,
+          description: description.trim() || undefined,
         });
-        onSuccess(item.kiotvietId, {
-          id: item.override.id ?? 'saved',
+        onSuccess(item.id, {
           highlight,
           featured,
-          customImage: customImage.trim() || null,
+          image: image.trim() || null,
           tag: tag.trim() || null,
-          note: note.trim() || null,
+          description: description.trim() || null,
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Lỗi khi lưu');
@@ -71,17 +70,16 @@ export function OverlayEditDialog({ open, onOpenChange, item, onSuccess }: Props
 
   function handleClear() {
     if (!item) return;
-    if (!confirm('Xóa overlay cho sản phẩm này?')) return;
+    if (!confirm('Xóa phần trình bày trên menu của món này?')) return;
     startTransition(async () => {
       try {
-        await clearOverride(item.kiotvietId);
-        onSuccess(item.kiotvietId, {
-          id: null,
+        await clearMenuDisplay(item.id);
+        onSuccess(item.id, {
           highlight: false,
           featured: false,
-          customImage: null,
+          image: null,
           tag: null,
-          note: null,
+          description: null,
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Lỗi khi xóa');
@@ -89,19 +87,20 @@ export function OverlayEditDialog({ open, onOpenChange, item, onSuccess }: Props
     });
   }
 
+  const hasDisplay =
+    !!item && (item.highlight || item.featured || !!item.image || !!item.tag || !!item.description);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-lg'>
         <DialogHeader>
-          <DialogTitle>Sửa overlay</DialogTitle>
+          <DialogTitle>Trình bày trên menu</DialogTitle>
         </DialogHeader>
 
         {item && (
           <div className='rounded bg-muted/50 p-3 text-sm'>
             <p className='font-medium'>{item.name}</p>
-            <p className='text-xs text-muted-foreground'>
-              Mã {item.code} · {item.categoryName}
-            </p>
+            <p className='text-xs text-muted-foreground'>{item.category}</p>
           </div>
         )}
 
@@ -138,30 +137,30 @@ export function OverlayEditDialog({ open, onOpenChange, item, onSuccess }: Props
           </div>
 
           <ImageInput
-            value={customImage}
-            onChange={setCustomImage}
-            label='Ảnh đè (thay ảnh KiotViet)'
-            helperText='Để trống sẽ dùng ảnh mặc định từ KiotViet. Ảnh tối đa 500 KB.'
+            value={image}
+            onChange={setImage}
+            label='Ảnh món'
+            helperText='Để trống thì menu website hiển thị ô ảnh trống. Ảnh tối đa 500 KB.'
             aspect='square'
           />
 
           <div className='space-y-2'>
-            <Label htmlFor='note'>Ghi chú nội bộ</Label>
+            <Label htmlFor='description'>Mô tả hiển thị trên website</Label>
             <Textarea
-              id='note'
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
+              id='description'
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              placeholder='Không hiển thị ra web'
+              placeholder='VD: Trà hoa cúc, đào tươi, thơm dịu'
             />
           </div>
 
           {error && <p className='rounded bg-red-50 p-2 text-sm text-red-700'>{error}</p>}
 
           <div className='flex justify-between gap-2'>
-            {item?.override.id && (
+            {hasDisplay && (
               <Button type='button' variant='outline' onClick={handleClear} disabled={isPending}>
-                Xóa overlay
+                Xóa trình bày
               </Button>
             )}
             <div className='flex gap-2 ml-auto'>

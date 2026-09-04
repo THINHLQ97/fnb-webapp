@@ -5,8 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
-import { getKiotVietClient } from '@/lib/kiotviet/client';
-import { getDoanhSoHomNay, getHangSapHet } from '@/lib/kiotviet/dashboard';
 
 const vndFmt = new Intl.NumberFormat('vi-VN', {
   style: 'currency',
@@ -60,30 +58,62 @@ async function loadStats() {
   }
 }
 
-type KiotStats = {
+type SalesStats = {
   ok: boolean;
   doanhSo: number;
-  soDon: number;
-  lowStock: Array<{ ten: string; ma: string; tonKho: number }>;
+  soLy: number;
+  lowStockCount: number;
+  lowStock: Array<{ id: string; ten: string; donVi: string; ton: number; nguong: number }>;
   reason?: string;
 };
 
-async function loadKiotViet(): Promise<KiotStats> {
-  const client = getKiotVietClient();
-  if (!client) {
-    return { ok: false, doanhSo: 0, soDon: 0, lowStock: [], reason: 'Chưa cấu hình KiotViet' };
-  }
+/** Doanh số hôm nay tính từ bảng bán hàng theo ngày + cảnh báo nguyên liệu sắp hết. */
+async function loadSalesToday(): Promise<SalesStats> {
   try {
-    const [ds, low] = await Promise.all([
-      getDoanhSoHomNay().catch(() => ({ doanhSo: 0, soDon: 0 })),
-      getHangSapHet(5).catch(() => []),
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [sales, lowStock] = await Promise.all([
+      prisma.dailySale.findMany({
+        where: { date: today },
+        include: { recipe: true },
+      }),
+      prisma.ingredient.findMany({
+        where: { active: true, alertLevel: { gt: 0 } },
+        orderBy: { stock: 'asc' },
+      }),
     ]);
-    return { ok: true, doanhSo: ds.doanhSo, soDon: ds.soDon, lowStock: low };
+
+    let doanhSo = 0;
+    let soLy = 0;
+    for (const s of sales) {
+      doanhSo += s.countRegular * s.recipe.priceRegular + s.countLarge * s.recipe.priceLarge;
+      soLy += s.countRegular + s.countLarge + s.countPromo;
+    }
+
+    const canhBao = lowStock.filter((i) => i.stock <= i.alertLevel);
+
+    return {
+      ok: true,
+      doanhSo,
+      soLy,
+      lowStockCount: canhBao.length,
+      lowStock: canhBao
+        .slice(0, 5)
+        .map((i) => ({
+          id: i.id,
+          ten: i.name,
+          donVi: i.unit,
+          ton: i.stock,
+          nguong: i.alertLevel,
+        })),
+    };
   } catch (err) {
     return {
       ok: false,
       doanhSo: 0,
-      soDon: 0,
+      soLy: 0,
+      lowStockCount: 0,
       lowStock: [],
       reason: err instanceof Error ? err.message : String(err),
     };
@@ -92,7 +122,7 @@ async function loadKiotViet(): Promise<KiotStats> {
 
 export default async function OverviewPage() {
   const session = await auth();
-  const [stats, kiot] = await Promise.all([loadStats(), loadKiotViet()]);
+  const [stats, sales] = await Promise.all([loadStats(), loadSalesToday()]);
 
   return (
     <PageContainer>
@@ -117,22 +147,22 @@ export default async function OverviewPage() {
           </div>
         )}
 
-        {/* KiotViet — doanh số & tồn kho */}
+        {/* Doanh số & tồn kho — dữ liệu nội bộ */}
         <section>
           <div className='mb-3 flex items-center justify-between'>
-            <h3 className='text-lg font-semibold'>Bán hàng hôm nay (KiotViet)</h3>
-            <Badge variant={kiot.ok ? 'default' : 'secondary'}>
-              {kiot.ok ? 'Kết nối OK' : 'Chưa kết nối'}
+            <h3 className='text-lg font-semibold'>Bán hàng hôm nay</h3>
+            <Badge variant='outline'>
+              <Link href='/dashboard/kho-hang'>Sổ bán hàng</Link>
             </Badge>
           </div>
 
-          {!kiot.ok ? (
+          {!sales.ok ? (
             <div className='rounded-md border border-dashed p-4 text-sm text-muted-foreground'>
-              {kiot.reason ?? 'Không lấy được dữ liệu KiotViet'}. Vào{' '}
+              Chưa đọc được số liệu bán hàng. Vào{' '}
               <Link href='/dashboard/setup' className='underline'>
-                Khởi tạo
+                Khởi tạo hệ thống
               </Link>{' '}
-              để xem hướng dẫn cấu hình KIOTVIET_* env vars.
+              để tạo bảng dữ liệu.
             </div>
           ) : (
             <div className='grid gap-4 md:grid-cols-3'>
@@ -143,11 +173,11 @@ export default async function OverviewPage() {
                     Doanh số hôm nay
                   </CardDescription>
                   <CardTitle className='text-2xl font-semibold tabular-nums'>
-                    {vndFmt.format(kiot.doanhSo)}
+                    {vndFmt.format(sales.doanhSo)}
                   </CardTitle>
                 </CardHeader>
                 <CardFooter>
-                  <Badge variant='outline'>{kiot.soDon} hóa đơn</Badge>
+                  <Badge variant='outline'>{sales.soLy} ly</Badge>
                 </CardFooter>
               </Card>
 
@@ -155,28 +185,34 @@ export default async function OverviewPage() {
                 <CardHeader>
                   <CardDescription className='flex items-center gap-2'>
                     <Icons.warning className='h-4 w-4' />
-                    Hàng sắp hết (tồn ≤ 10)
+                    Nguyên liệu sắp hết
                   </CardDescription>
                   <CardTitle className='text-2xl font-semibold tabular-nums'>
-                    {kiot.lowStock.length}
+                    {sales.lowStockCount}
                   </CardTitle>
                 </CardHeader>
                 <CardFooter>
-                  {kiot.lowStock.length === 0 ? (
-                    <p className='text-sm text-muted-foreground'>Không có sản phẩm nào sắp hết.</p>
+                  {sales.lowStockCount === 0 ? (
+                    <p className='text-sm text-muted-foreground'>
+                      Không có nguyên liệu nào dưới ngưỡng cảnh báo.
+                    </p>
                   ) : (
                     <ul className='w-full space-y-1 text-sm'>
-                      {kiot.lowStock.map((p) => (
-                        <li key={p.ma} className='flex items-center justify-between'>
-                          <span className='truncate' title={p.ten}>
-                            <span className='font-mono text-xs text-muted-foreground'>
-                              {p.ma}
-                            </span>{' '}
-                            {p.ten}
+                      {sales.lowStock.map((i) => (
+                        <li key={i.id} className='flex items-center justify-between'>
+                          <span className='truncate' title={i.ten}>
+                            {i.ten}
                           </span>
-                          <span className='shrink-0 font-medium text-red-600'>còn {p.tonKho}</span>
+                          <span className='shrink-0 font-medium text-red-600'>
+                            còn {i.ton} {i.donVi} / ngưỡng {i.nguong}
+                          </span>
                         </li>
                       ))}
+                      {sales.lowStockCount > sales.lowStock.length && (
+                        <li className='text-xs text-muted-foreground'>
+                          … và {sales.lowStockCount - sales.lowStock.length} nguyên liệu khác
+                        </li>
+                      )}
                     </ul>
                   )}
                 </CardFooter>
@@ -228,7 +264,7 @@ export default async function OverviewPage() {
             <QuickAction
               href='/dashboard/menu'
               title='Cập nhật menu'
-              description='Đánh dấu Best seller, thêm tag cho sản phẩm KiotViet'
+              description='Đánh dấu Best seller, thêm tag và ảnh cho món'
               icon={<Icons.product className='h-5 w-5' />}
             />
             <QuickAction

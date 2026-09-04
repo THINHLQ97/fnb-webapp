@@ -4,21 +4,20 @@ import { useMemo, useState } from 'react';
 import { Star } from 'lucide-react';
 
 type Item = {
-  id: number;
-  code: string;
+  id: string;
   name: string;
   price: number;
   priceLabel: string;
   description: string | null;
   image: string | null;
-  categoryId: number | null;
+  categoryId: string | null;
   categoryName: string;
   tag: string | null;
   highlight: boolean;
   featured: boolean;
 };
 
-type Category = { id: number; name: string };
+type Category = { id: string; name: string };
 
 const ALL = '__all__';
 
@@ -33,8 +32,7 @@ export function MenuFilter({
 
   const filtered = useMemo(() => {
     if (active === ALL) return items;
-    const id = Number(active);
-    return items.filter((i) => i.categoryId === id);
+    return items.filter((i) => i.categoryId === active);
   }, [active, items]);
 
   return (

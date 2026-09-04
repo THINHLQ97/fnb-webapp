@@ -29,6 +29,8 @@ const INGREDIENTS: IngSeed[] = [
   { name: 'Trà Ô Long', category: 'TRA', unit: 'g', stock: 1500, alertLevel: 150, costPerUnit: 301.32, packagingNote: 'WAO Olong Rạng — 301.320đ/kg' },
   { name: 'Trà nguyên lá', category: 'TRA', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 196.56, packagingNote: 'WAO Trà Đen Nguyên Lá — 196.560đ/kg' },
   { name: 'Bông cúc khô', category: 'TRA', unit: 'g', stock: 500, alertLevel: 50, costPerUnit: 250, packagingNote: '250.000đ/kg' },
+  { name: 'Trà lài Minh Thành', category: 'TRA', unit: 'g', stock: 500, alertLevel: 50, costPerUnit: 1000, packagingNote: 'ƯỚC 1 bao "bự" 500g × 500.000đ (nếu bao 1kg → 500đ/g)' },
+  { name: 'Trà thơm', category: 'TRA', unit: 'g', stock: 500, alertLevel: 50, costPerUnit: 220, packagingNote: 'ƯỚC 220.000đ/kg (làm trà lài kèm Wao)' },
 
   // ĐƯỜNG
   { name: 'Đường vàng', category: 'DUONG', unit: 'g', stock: 20000, alertLevel: 2000, costPerUnit: 22.20, packagingNote: 'Đường mía Thanh Bạch — 1.110.000đ/bao 50kg' },
@@ -43,6 +45,8 @@ const INGREDIENTS: IngSeed[] = [
   // TOPPING
   { name: 'Trân châu đen (khô)', category: 'TOPPING', unit: 'g', stock: 5000, alertLevel: 500, costPerUnit: 30.33, packagingNote: 'DOU XIAN — 546.000đ/thùng 18kg (6 gói 3kg). 1kg khô ~15 ly' },
   { name: 'Hạt đác (bịch)', category: 'TOPPING', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 70, packagingNote: 'ƯỚC 70.000đ/bịch 1kg' },
+  { name: 'Sương sáo (bột)', category: 'TOPPING', unit: 'bịch', stock: 20, alertLevel: 5, costPerUnit: 20000, packagingNote: 'ƯỚC bịch 40g ~ 20.000đ. Thạch bông cúc 1 bịch/mẻ' },
+  { name: 'Nước cốt vải (topping)', category: 'TOPPING', unit: 'ml', stock: 565, alertLevel: 100, costPerUnit: 116.81, packagingNote: 'Vải Thiều Tem Đỏ 396k/thùng 12 lon (ước lon 565ml)' },
 
   // CÀ PHÊ + CACAO
   { name: 'Cà phê hạt', category: 'CA_PHE', unit: 'g', stock: 3000, alertLevel: 300, costPerUnit: 230, packagingNote: 'Mokafi Silver — 230.000đ/kg' },
@@ -64,12 +68,26 @@ const INGREDIENTS: IngSeed[] = [
   // TRÁI CÂY (giá tính trên phần ăn được, đã trừ yield)
   { name: 'Vải tươi (cùi)', category: 'TRAI_CAY', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 91, packagingNote: 'ƯỚC 50k/kg, yield 55% (bỏ vỏ hạt)' },
   { name: 'Chôm chôm (cùi)', category: 'TRAI_CAY', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 73, packagingNote: 'ƯỚC 40k/kg, yield 55%' },
+  { name: 'Xoài (cùi)', category: 'TRAI_CAY', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 77, packagingNote: 'ƯỚC xoài Cát Hoà Lộc 50k/kg, yield 65%' },
+  { name: 'Ổi hồng', category: 'TRAI_CAY', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 35, packagingNote: 'ƯỚC 30.000đ/kg, yield 85%' },
   { name: 'Cam sành', category: 'TRAI_CAY', unit: 'g', stock: 3000, alertLevel: 300, costPerUnit: 30, packagingNote: 'ƯỚC 30.000đ/kg' },
+  { name: 'Quýt (cùi)', category: 'TRAI_CAY', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 83, packagingNote: 'ƯỚC 50k/kg, yield 60% (tách múi)' },
+  { name: 'Nhãn (cùi)', category: 'TRAI_CAY', unit: 'g', stock: 1000, alertLevel: 100, costPerUnit: 91, packagingNote: 'ƯỚC 50k/kg, yield 55%' },
+  { name: 'Măng cầu (cùi)', category: 'TRAI_CAY', unit: 'g', stock: 1000, alertLevel: 100, costPerUnit: 175, packagingNote: 'ƯỚC 70k/kg, yield 40% (bỏ vỏ hạt)' },
   { name: 'Tắc', category: 'TRAI_CAY', unit: 'g', stock: 2000, alertLevel: 200, costPerUnit: 30, packagingNote: 'ƯỚC 30.000đ/kg' },
+  { name: 'Thơm (dứa)', category: 'TRAI_CAY', unit: 'trái', stock: 5, alertLevel: 2, costPerUnit: 25000, packagingNote: 'ƯỚC 25.000đ/trái vừa. Đác thơm 2 trái/mẻ' },
+
+  // BÁNH (đơn vị tính theo bánh/hũ)
+  { name: 'Bánh Cream O', category: 'BANH', unit: 'bánh', stock: 100, alertLevel: 20, costPerUnit: 700, packagingNote: 'ƯỚC 700đ/bánh mini. Đá xay Cookie 3 bánh/ly' },
+  { name: 'Bánh Oreo', category: 'BANH', unit: 'bánh', stock: 100, alertLevel: 20, costPerUnit: 1000, packagingNote: 'ƯỚC 1.000đ/bánh mini. Milo dầm 1 bánh/ly' },
+  { name: 'Bánh Flan', category: 'BANH', unit: 'hũ', stock: 20, alertLevel: 5, costPerUnit: 4000, packagingNote: 'ƯỚC tự làm 4.000đ/hũ 90g (mua sẵn ~8-10k)' },
 
   // PHỤ LIỆU
   { name: 'Gelatin', category: 'PHU_LIEU', unit: 'g', stock: 1000, alertLevel: 100, costPerUnit: 280, packagingNote: 'Ewald — 280.000đ/gói 1kg' },
   { name: 'Muối', category: 'PHU_LIEU', unit: 'g', stock: 1000, alertLevel: 100, costPerUnit: 10, packagingNote: 'ƯỚC 10.000đ/kg' },
+  { name: 'Vani ống', category: 'PHU_LIEU', unit: 'ống', stock: 50, alertLevel: 10, costPerUnit: 2500, packagingNote: 'ƯỚC 2.500đ/ống (lốc 10 ống ~25k). Flan 2 ống/mẻ' },
+  { name: 'Trứng gà', category: 'PHU_LIEU', unit: 'quả', stock: 30, alertLevel: 10, costPerUnit: 3500, packagingNote: 'ƯỚC 3.500đ/quả công nghiệp. Flan 10 quả/mẻ' },
+  { name: 'Màu thực phẩm', category: 'PHU_LIEU', unit: 'giọt', stock: 600, alertLevel: 100, costPerUnit: 50, packagingNote: 'ƯỚC chai 30ml ~30k, ~20 giọt/ml → 50đ/giọt' },
 
   // BAO BÌ
   { name: 'Ly nhựa M + nắp + ống hút', category: 'BAO_BI', unit: 'cái', stock: 500, alertLevel: 100, costPerUnit: 1820, packagingNote: 'Ly M 1.320đ + nắp 300đ + ống to 200đ' },

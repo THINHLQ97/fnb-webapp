@@ -27,6 +27,12 @@ COPY --from=builder /app/public ./public
 RUN mkdir .next && chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Bootstrap: prisma CLI global + schema để tự migrate DB lúc container
+# start. DB đã có bảng → no-op. DB mới trống → tự tạo Post/User/...
+RUN npm install -g prisma@6.19.3
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+
 USER nextjs
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "prisma db push --schema=./prisma/schema.prisma --skip-generate --accept-data-loss && node server.js"]
